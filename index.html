@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>TiFdizzymall</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -16,35 +16,56 @@
     <section class="hud">
       <div class="title-block">
         <h1><span>TiF</span>DIZZYMALL</h1>
-        <p class="subtitle">A tiny mall-run homage built from the loading screen vibe.</p>
+        <p class="subtitle">Explore the mall, meet shoppers, collect and trade items, and follow Dizzy-style objectives at your own pace.</p>
       </div>
       <div class="stats">
-        <div>Score: <strong id="score">0</strong></div>
-        <div>Shops Cleared: <strong id="shops">0</strong>/4</div>
-        <div>Time: <strong id="time">90</strong></div>
+        <div>Screen: <strong id="screenName">Atrium</strong></div>
+        <div>Inventory: <strong id="inventoryCount">0</strong></div>
+        <div>Objectives done: <strong id="objectivesDone">0</strong>/<strong id="objectivesTotal">0</strong></div>
       </div>
     </section>
 
     <section class="game-shell">
       <div class="game-column">
-        <canvas id="game" width="960" height="640" aria-label="Dizzy Mall game"></canvas>
+        <canvas id="game" width="960" height="640" aria-label="TiFdizzymall game"></canvas>
+
         <section class="touch-controls" aria-label="Touch controls">
-          <button class="touch-btn" data-touch="left">◀</button>
-          <button class="touch-btn touch-btn-jump" data-touch="jump">▲ JUMP</button>
-          <button class="touch-btn" data-touch="right">▶</button>
+          <div class="joystick-cluster">
+            <div class="joystick-title">🕹️ Joystick</div>
+            <div class="joystick-grid">
+              <button class="touch-btn touch-btn-dir" data-touch="left">⬅️ LEFT</button>
+              <button class="touch-btn touch-btn-dir" data-touch="right">➡️ RIGHT</button>
+            </div>
+          </div>
+          <div class="action-cluster">
+            <button class="touch-btn touch-btn-jump" data-touch="jump">🦘 JUMP</button>
+            <button class="touch-btn touch-btn-take" data-touch="take">🤏 TAKE</button>
+            <button class="touch-btn touch-btn-give" data-touch="give">🎁 GIVE</button>
+            <button class="touch-btn touch-btn-talk" data-touch="talk">💬 TALK</button>
+          </div>
         </section>
       </div>
+
       <aside class="panel">
         <h2>How to play</h2>
         <ul>
           <li>Move with <b>← →</b> or <b>A D</b></li>
           <li>Jump with <b>↑</b>, <b>W</b> or <b>Space</b></li>
-          <li>On iPhone, use the touch buttons below the game</li>
-          <li>Ride escalators to reach the mall shops</li>
-          <li>Collect the 4 shop tokens, then reach the directory</li>
+          <li>Press <b>T</b> / <b>💬 TALK</b> near characters</li>
+          <li>Press <b>E</b> / <b>🤏 TAKE</b> near items</li>
+          <li>Press <b>G</b> / <b>🎁 GIVE</b> near a character to hand over the needed item</li>
+          <li>No timer, no ending — just explore the 10-screen mall and clear objectives when you feel like it</li>
         </ul>
-        <button id="restart">Restart</button>
-        <p id="message" class="message">Clear the mall before time runs out.</p>
+        <button id="restart">Restart Adventure</button>
+        <div class="inventory-box">
+          <h3>Inventory</h3>
+          <ul id="inventoryList"><li>Empty pockets.</li></ul>
+        </div>
+        <div class="inventory-box">
+          <h3>Objectives</h3>
+          <ul id="objectiveList"><li>Talk to the mall visitors.</li></ul>
+        </div>
+        <p id="message" class="message">Walk around the atrium and press TALK when you meet someone.</p>
       </aside>
     </section>
   </main>

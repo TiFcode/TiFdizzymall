@@ -9,15 +9,15 @@
 }
 
 * { box-sizing: border-box; }
+html, body { margin: 0; }
 body {
-  margin: 0;
   font-family: "Trebuchet MS", Verdana, sans-serif;
   background: radial-gradient(circle at top, #122030, var(--bg) 60%);
   color: var(--text);
 }
 
 .wrap {
-  max-width: 1360px;
+  max-width: 1480px;
   margin: 0 auto;
   padding: 20px;
 }
@@ -28,14 +28,12 @@ body {
   border: 2px solid #35506b;
   padding: 12px;
 }
-
 .hero-image img {
   display: block;
   width: 100%;
   height: auto;
   border: 3px solid #86f1ff;
 }
-
 .hero-caption {
   margin: 10px 0 0;
   color: #d0e5f9;
@@ -64,30 +62,28 @@ h1 span {
   color: var(--accent);
   text-shadow: 4px 4px 0 #6b1029, -3px 0 0 white;
 }
+.subtitle { margin: 8px 0 0; opacity: 0.85; max-width: 780px; }
 
-.subtitle { margin: 8px 0 0; opacity: 0.85; }
 .stats {
   display: grid;
   gap: 6px;
   padding: 12px 16px;
   background: rgba(16, 22, 30, 0.9);
   border: 2px solid #35506b;
-  min-width: 200px;
+  min-width: 240px;
 }
 
 .game-shell {
   display: grid;
-  grid-template-columns: minmax(0, 960px) 300px;
+  grid-template-columns: minmax(0, 960px) 340px;
   gap: 18px;
   align-items: start;
 }
-
 .game-column {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-
 canvas {
   width: 100%;
   height: auto;
@@ -96,15 +92,13 @@ canvas {
   image-rendering: pixelated;
   box-shadow: 0 0 0 6px #113148;
 }
-
 .panel {
   background: var(--panel);
   border: 2px solid #35506b;
   padding: 16px;
 }
-
-.panel h2 { margin-top: 0; color: var(--yellow); }
-.panel ul {
+.panel h2, .inventory-box h3 { margin-top: 0; color: var(--yellow); }
+.panel ul, .inventory-box ul {
   padding-left: 18px;
   line-height: 1.5;
 }
@@ -118,25 +112,51 @@ button {
   cursor: pointer;
   margin: 12px 0;
 }
+.inventory-box {
+  border: 1px dashed #496781;
+  padding: 10px;
+  margin-top: 14px;
+}
 .message {
-  min-height: 70px;
+  min-height: 96px;
   border: 1px dashed #496781;
   padding: 10px;
   color: #d0e5f9;
 }
 
 .touch-controls {
-  display: none;
-  grid-template-columns: 1fr 1.3fr 1fr;
-  gap: 12px;
-  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1.1fr 1.5fr;
+  gap: 14px;
+  margin-top: 8px;
 }
-
+.joystick-cluster, .action-cluster {
+  background: rgba(16, 22, 30, 0.96);
+  border: 2px solid #35506b;
+  padding: 12px;
+  border-radius: 18px;
+}
+.joystick-title {
+  text-align: center;
+  margin-bottom: 10px;
+  color: var(--line);
+  font-weight: 700;
+}
+.joystick-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.action-cluster {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
 .touch-btn {
   margin: 0;
-  min-height: 72px;
+  min-height: 76px;
   border-radius: 16px;
-  font-size: 1.6rem;
+  font-size: 1.08rem;
   background: #17324a;
   border: 2px solid #86f1ff;
   user-select: none;
@@ -144,10 +164,11 @@ button {
   -webkit-touch-callout: none;
   touch-action: manipulation;
 }
-
-.touch-btn-jump {
-  background: #b82447;
-}
+.touch-btn-jump { background: #b82447; }
+.touch-btn-take { background: #2d6f9e; }
+.touch-btn-give { background: #5d4ab4; }
+.touch-btn-talk { background: #2f8b4f; }
+.touch-btn-dir { background: #214866; }
 
 @media (max-width: 1180px) {
   .game-shell { grid-template-columns: 1fr; }
@@ -155,8 +176,6 @@ button {
   .stats { min-width: unset; width: 100%; }
 }
 
-@media (hover: none), (pointer: coarse) {
-  .touch-controls {
-    display: grid;
-  }
+@media (max-width: 860px) {
+  .touch-controls { grid-template-columns: 1fr; }
 }
