@@ -12,8 +12,7 @@ document.getElementById('restart').addEventListener('click', init);
 
 const W = canvas.width;
 const H = canvas.height;
-const FLOOR_Y = 540;
-const GRAVITY = 0.55;
+const GRAVITY = 0.56;
 const keys = {};
 const touchState = { left: false, right: false, jump: false, take: false, give: false, talk: false };
 const actionLatch = { take: false, give: false, talk: false };
@@ -34,138 +33,131 @@ for (const btn of document.querySelectorAll('[data-touch]')) {
 }
 
 const itemInfo = {
-  scarf: { label: 'Red Scarf', color: '#ff5a7a' },
-  token: { label: 'Arcade Token', color: '#7be7ff' },
-  teddy: { label: 'Tiny Teddy', color: '#c79a5b' },
-  apple: { label: 'Green Apple', color: '#7bff9e' },
-  brochure: { label: 'Mall Brochure', color: '#ffe777' },
-  flower: { label: 'Potted Flower', color: '#ff9bf1' },
-  sandwich: { label: 'Cheese Sandwich', color: '#ffcf71' },
-  batteries: { label: 'Toy Batteries', color: '#bbbfd4' },
-  ribbon: { label: 'Blue Ribbon', color: '#6fb0ff' },
-  postcard: { label: 'Fountain Postcard', color: '#f4dfb8' }
+  scarf: { label: 'Red Scarf', color: '#ff5b77', icon: '🧣' },
+  token: { label: 'Arcade Token', color: '#72e8ff', icon: '🪙' },
+  teddy: { label: 'Tiny Teddy', color: '#c7924c', icon: '🧸' },
+  apple: { label: 'Green Apple', color: '#78ff9b', icon: '🍏' },
+  brochure: { label: 'Mall Brochure', color: '#ffe06e', icon: '📄' },
+  flower: { label: 'Potted Flower', color: '#ff93e6', icon: '🪴' },
+  sandwich: { label: 'Cheese Sandwich', color: '#ffca7a', icon: '🥪' },
+  batteries: { label: 'Toy Batteries', color: '#c7cde0', icon: '🔋' },
+  ribbon: { label: 'Blue Ribbon', color: '#79a8ff', icon: '🎀' },
+  postcard: { label: 'Fountain Postcard', color: '#f4debb', icon: '💌' }
 };
-
-const sceneOrder = [
-  'atrium','dizzywear','games','kiddies','foodcourt',
-  'directory','fountain','roofgarden','toybridge','backhall'
-];
 
 const scenes = {
   atrium: {
-    name: 'Atrium', bg: ['#09131f','#10263b'], accent: '#6de7ff', store: null,
-    exits: { left: 'foodcourt', right: 'directory' }, stairsUp: 'roofgarden', stairsDown: 'backhall',
-    trees: [{x:130,y:510},{x:820,y:510}],
-    items: [{id:'brochure_atrium', key:'brochure', x:470, y:514, taken:false}],
+    name: 'Atrium', type: 'mall', sign: 'DIZZY MALL', palette: ['#08111d', '#11314a'], floor: 565,
+    platforms: [
+      { x: 40, y: 565, w: 880, h: 28 },
+      { x: 90, y: 392, w: 300, h: 20 },
+      { x: 565, y: 392, w: 260, h: 20 },
+      { x: 145, y: 220, w: 225, h: 20 },
+      { x: 560, y: 220, w: 225, h: 20 }
+    ],
+    escalators: [
+      { x1: 315, y1: 565, x2: 520, y2: 392, dir: 1 },
+      { x1: 640, y1: 565, x2: 462, y2: 392, dir: -1 },
+      { x1: 255, y1: 392, x2: 468, y2: 220, dir: 1 }
+    ],
+    exits: [{ side: 'left', to: 'foodcourt' }, { side: 'right', to: 'directory' }],
+    items: [{ id: 'brochure_atrium', key: 'brochure', x: 454, y: 531, taken: false }],
+    trees: [{ x: 100, y: 550 }, { x: 832, y: 550 }],
     npcs: [
-      { id:'greeter', name:'Greeter Pip', x:250, y:500, color:'#ffd84d', leisure:[
-        'Welcome to Dizzy Mall. The escalators squeak, but they never judge.',
-        'If you get lost, nod confidently. That is what grown-ups do too.'
-      ], objective:{ id:'brochure', need:'brochure', doneText:'Lovely. With the brochure back, I can stop pretending I know the map.', reward:'postcard', rewardText:'Take this fountain postcard. It makes every wrong turn feel intentional.' }},
-      { id:'benchpal', name:'Mina on the Bench', x:700, y:500, color:'#ff96d0', leisure:[
-        'I come here to listen to escalators and think dramatic thoughts.',
-        'The fountain upstairs throws better sparkles when nobody is rushing.'
-      ]}
-    ]
+      { id: 'greeter', name: 'Greeter Pip', x: 218, y: 530, platformY: 565, color: '#ffd84d', leisure: ['Welcome to Dizzy Mall. Keep your grin polished and your shoes pointed toward mischief.', 'These escalators hum louder when the mall is thinking.'], objective: { need: 'brochure', doneText: 'Ah, the brochure! Now I can stop inventing directions.', reward: 'postcard', rewardText: 'Take this fountain postcard. It tends to open conversations.' } },
+      { id: 'benchpal', name: 'Mina', x: 720, y: 530, platformY: 565, color: '#ff98cf', leisure: ['I come here to admire the architecture and ignore my errands.', 'The upper railings are excellent for dramatic pauses.'] }
+    ],
+    decorations: [{ type: 'directory', x: 432, y: 510 }]
   },
   dizzywear: {
-    name: 'Dizzywear', bg: ['#220a20','#3d123a'], accent: '#ff72ef', store:'DIZZYWEAR',
-    exits: { right: 'games' }, stairsDown:'atrium', trees:[{x:90,y:510}],
-    items: [{id:'scarf_shop', key:'scarf', x:300, y:505, taken:false},{id:'ribbon_shop', key:'ribbon', x:720, y:505, taken:false}],
-    npcs: [
-      { id:'tailor', name:'Tailor Bibi', x:560, y:500, color:'#ffc14a', leisure:[
-        'A scarf improves any adventure by at least forty percent.',
-        'I hem capes for people who dramatically point at objectives.'
-      ], objective:{ id:'flower', need:'flower', doneText:'Oh perfect, a flower for the counter. The whole shop smells less like boxes now.', reward:'batteries', rewardText:'Take these toy batteries. The toy bridge kid was asking for some.' }}
-    ]
+    name: 'Dizzywear', type: 'shop', store: 'DIZZYWEAR', palette: ['#210d21', '#4f1b48'], floor: 565,
+    platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 100, y: 410, w: 220, h: 18 }, { x: 640, y: 410, w: 200, h: 18 }],
+    escalators: [{ x1: 325, y1: 565, x2: 525, y2: 410, dir: 1 }],
+    exits: [{ side: 'left', to: 'roofgarden' }, { side: 'right', to: 'games' }],
+    items: [{ id: 'scarf_shop', key: 'scarf', x: 293, y: 531, taken: false }, { id: 'ribbon_shop', key: 'ribbon', x: 712, y: 376, taken: false }],
+    trees: [{ x: 860, y: 550 }],
+    npcs: [{ id: 'tailor', name: 'Tailor Bibi', x: 615, y: 530, platformY: 565, color: '#ffc55f', leisure: ['Clothes should feel like a secret confidence boost.', 'A scarf improves almost any quest line.'], objective: { need: 'flower', doneText: 'Perfect. A flower for the counter. The whole shop feels brighter.', reward: 'batteries', rewardText: 'Here, take these toy batteries.' } }],
+    decorations: [{ type: 'shopItems', x: 220, y: 256, kind: 'clothes' }]
   },
   games: {
-    name: 'Games Arcade', bg: ['#091028','#172c54'], accent:'#5fa7ff', store:'GAMES',
-    exits: { left: 'dizzywear', right: 'kiddies' }, stairsDown:'atrium', trees:[],
-    items: [{id:'token_arcade', key:'token', x:250, y:505, taken:false}],
-    npcs: [
-      { id:'arcadekid', name:'Vex the Gamer', x:650, y:500, color:'#7bffda', leisure:[
-        'The blinking machine only respects people who use exact change.',
-        'I once lost three afternoons inside a claw machine strategy.'
-      ], objective:{ id:'token', need:'token', doneText:'YES. The arcade token! Time to become champion of a very specific cabinet.', reward:'sandwich', rewardText:'You look peckish. Here, have my victory sandwich.' }}
-    ]
+    name: 'Games Arcade', type: 'shop', store: 'GAMES', palette: ['#08102a', '#1a3560'], floor: 565,
+    platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 120, y: 402, w: 250, h: 18 }, { x: 610, y: 402, w: 230, h: 18 }],
+    escalators: [{ x1: 620, y1: 565, x2: 418, y2: 402, dir: -1 }],
+    exits: [{ side: 'left', to: 'dizzywear' }, { side: 'right', to: 'kiddies' }],
+    items: [{ id: 'token_arcade', key: 'token', x: 248, y: 368, taken: false }],
+    trees: [],
+    npcs: [{ id: 'arcadekid', name: 'Vex', x: 695, y: 530, platformY: 565, color: '#79ffd9', leisure: ['That cabinet eats tokens like a tiny metallic dragon.', 'I trust blinking lights more than I trust silence.'], objective: { need: 'token', doneText: 'YES. The exact token. My glorious rematch awaits.', reward: 'sandwich', rewardText: 'Take my victory sandwich. I am too excited to chew.' } }],
+    decorations: [{ type: 'shopItems', x: 220, y: 250, kind: 'games' }]
   },
   kiddies: {
-    name: 'Kiddies Corner', bg: ['#11230f','#275425'], accent:'#71ff8d', store:'KIDDIES',
-    exits: { left: 'games', right: 'foodcourt' }, stairsDown:'atrium', trees:[{x:810,y:515}],
-    items: [{id:'teddy_corner', key:'teddy', x:320, y:505, taken:false}],
-    npcs: [
-      { id:'nanny', name:'Nanny Flo', x:650, y:500, color:'#ffd7a8', leisure:[
-        'Children can detect hidden sweets with military accuracy.',
-        'The toy shelves are arranged by chaos and hope.'
-      ], objective:{ id:'batteries', need:'batteries', doneText:'Ah! Fresh batteries. The singing rocket can haunt the room again.', reward:'apple', rewardText:'Please take this green apple before the toddlers negotiate for it.' }}
-    ]
+    name: 'Kiddies Corner', type: 'shop', store: 'KIDDIES', palette: ['#11230f', '#2e6030'], floor: 565,
+    platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 130, y: 410, w: 230, h: 18 }, { x: 620, y: 410, w: 220, h: 18 }],
+    escalators: [{ x1: 330, y1: 565, x2: 525, y2: 410, dir: 1 }],
+    exits: [{ side: 'left', to: 'games' }, { side: 'right', to: 'foodcourt' }],
+    items: [{ id: 'teddy_corner', key: 'teddy', x: 251, y: 376, taken: false }],
+    trees: [{ x: 838, y: 550 }],
+    npcs: [{ id: 'nanny', name: 'Nanny Flo', x: 690, y: 530, platformY: 565, color: '#ffd9b0', leisure: ['The toy shelves are arranged by chaos, glitter, and courage.', 'If a teddy looks at you too knowingly, put it back slowly.'], objective: { need: 'batteries', doneText: 'Fresh batteries! The little rocket may sing again.', reward: 'apple', rewardText: 'Have this green apple before the toddlers bargain for it.' } }],
+    decorations: [{ type: 'shopItems', x: 230, y: 248, kind: 'kiddies' }]
   },
   foodcourt: {
-    name: 'Food Court', bg: ['#2a1608','#5b3215'], accent:'#ffd36a', store:'FOOD',
-    exits: { left: 'kiddies', right: 'atrium' }, stairsDown:'backhall', trees:[{x:120,y:512}],
-    items: [{id:'flower_food', key:'flower', x:770, y:505, taken:false}],
-    npcs: [
-      { id:'chef', name:'Chef Nori', x:420, y:500, color:'#ff8d6b', leisure:[
-        'A food court is just a ballroom where trays perform.',
-        'The fries are gossiping again. I can hear the sizzling.'
-      ], objective:{ id:'apple', need:'apple', doneText:'A crisp apple! Exactly what my balancing lunch needed.', reward:'sandwich', rewardText:'I made you a proper cheese sandwich in return.' }}
-    ]
+    name: 'Food Court', type: 'shop', store: 'FOOD', palette: ['#2c1608', '#68411b'], floor: 565,
+    platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 100, y: 405, w: 245, h: 18 }, { x: 650, y: 405, w: 190, h: 18 }],
+    escalators: [{ x1: 620, y1: 565, x2: 425, y2: 405, dir: -1 }],
+    exits: [{ side: 'left', to: 'kiddies' }, { side: 'right', to: 'atrium' }],
+    items: [{ id: 'flower_food', key: 'flower', x: 746, y: 371, taken: false }],
+    trees: [{ x: 96, y: 550 }],
+    npcs: [{ id: 'chef', name: 'Chef Nori', x: 425, y: 530, platformY: 565, color: '#ff966a', leisure: ['A food court is basically a carnival with trays.', 'The fries are gossiping again. I can hear the sizzling.'], objective: { need: 'apple', doneText: 'A crisp apple! Just what my balancing lunch needed.', reward: 'sandwich', rewardText: 'I made you a proper cheese sandwich in return.' } }],
+    decorations: [{ type: 'shopItems', x: 225, y: 250, kind: 'food' }]
   },
   directory: {
-    name: 'Grand Directory', bg: ['#10202f','#1f425f'], accent:'#ffe89b', store:'DIRECTORY',
-    exits: { left: 'atrium', right: 'fountain' }, stairsUp:'toybridge', trees:[],
+    name: 'Grand Directory', type: 'mall', sign: 'DIRECTORY', palette: ['#10202f', '#225071'], floor: 565,
+    platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 120, y: 396, w: 250, h: 18 }, { x: 610, y: 396, w: 220, h: 18 }],
+    escalators: [{ x1: 318, y1: 565, x2: 520, y2: 396, dir: 1 }],
+    exits: [{ side: 'left', to: 'atrium' }, { side: 'right', to: 'fountain' }],
     items: [],
-    npcs: [
-      { id:'clerk', name:'Directory Dot', x:520, y:500, color:'#ffe37e', leisure:[
-        'Maps are just stories for people who enjoy corners.',
-        'I like giving directions in a mysterious tone. It raises morale.'
-      ], objective:{ id:'postcard', need:'postcard', doneText:'That postcard proves the fountain still exists. Excellent record-keeping.', reward:'flower', rewardText:'Take this potted flower from lost property. It needs a new stage.' }}
-    ]
+    trees: [],
+    npcs: [{ id: 'clerk', name: 'Directory Dot', x: 520, y: 361, platformY: 396, color: '#ffe37e', leisure: ['Maps are just stories for people who enjoy corners.', 'I like giving directions in a mysterious tone. It raises morale.'], objective: { need: 'postcard', doneText: 'Wonderful. Proof that the fountain still sparkles.', reward: 'flower', rewardText: 'Take this rescued potted flower.' } }],
+    decorations: [{ type: 'directory', x: 435, y: 510 }, { type: 'directory', x: 180, y: 340 }]
   },
   fountain: {
-    name: 'Fountain Court', bg: ['#082232','#0f4862'], accent:'#7defff', store:null,
-    exits: { left: 'directory', right: 'roofgarden' }, stairsUp:'toybridge', trees:[{x:150,y:515},{x:790,y:515}],
-    items: [{id:'postcard_fountain', key:'postcard', x:300, y:505, taken:false}],
-    npcs: [
-      { id:'poet', name:'Poet Rumi', x:640, y:500, color:'#cab4ff', leisure:[
-        'Fountains are just poetry with plumbing.',
-        'I have never met a coin that did not long for dramatic splashdown.'
-      ]}
-    ]
+    name: 'Fountain Court', type: 'mall', sign: 'FOUNTAIN', palette: ['#082232', '#0f566f'], floor: 565,
+    platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 110, y: 396, w: 230, h: 18 }, { x: 640, y: 396, w: 180, h: 18 }],
+    escalators: [{ x1: 630, y1: 565, x2: 430, y2: 396, dir: -1 }],
+    exits: [{ side: 'left', to: 'directory' }, { side: 'right', to: 'roofgarden' }],
+    items: [{ id: 'postcard_fountain', key: 'postcard', x: 246, y: 362, taken: false }],
+    trees: [{ x: 120, y: 550 }, { x: 810, y: 550 }],
+    npcs: [{ id: 'poet', name: 'Poet Rumi', x: 715, y: 530, platformY: 565, color: '#d0b2ff', leisure: ['Fountains are poetry with plumbing.', 'I have never met a coin that did not long for drama.'] }],
+    decorations: [{ type: 'fountain', x: 475, y: 505 }]
   },
   roofgarden: {
-    name: 'Roof Garden', bg: ['#152d22','#2d6544'], accent:'#84ffba', store:null,
-    exits: { left: 'fountain', right: 'toybridge' }, stairsDown:'atrium', trees:[{x:220,y:510},{x:500,y:510},{x:770,y:510}],
-    items: [{id:'apple_roof', key:'apple', x:610, y:505, taken:false}],
-    npcs: [
-      { id:'gardener', name:'Gardener Lio', x:330, y:500, color:'#83ff9d', leisure:[
-        'Trees indoors become very theatrical. They know people are watching.',
-        'I trim hedges into shapes only birds appreciate.'
-      ]}
-    ]
+    name: 'Roof Garden', type: 'garden', sign: 'ROOF GARDEN', palette: ['#12261b', '#2f6843'], floor: 565,
+    platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 115, y: 410, w: 245, h: 18 }, { x: 610, y: 410, w: 210, h: 18 }],
+    escalators: [{ x1: 318, y1: 565, x2: 520, y2: 410, dir: 1 }],
+    exits: [{ side: 'left', to: 'fountain' }, { side: 'right', to: 'dizzywear' }],
+    items: [{ id: 'apple_roof', key: 'apple', x: 705, y: 376, taken: false }],
+    trees: [{ x: 180, y: 548 }, { x: 470, y: 548 }, { x: 770, y: 548 }],
+    npcs: [{ id: 'gardener', name: 'Gardener Lio', x: 270, y: 376, platformY: 410, color: '#88ffa2', leisure: ['Trees indoors become theatrical. They know they have an audience.', 'I trim shrubs into shapes only birds appreciate.'] }],
+    decorations: [{ type: 'bench', x: 520, y: 522 }]
   },
   toybridge: {
-    name: 'Toy Bridge', bg: ['#1d162e','#40306a'], accent:'#94a8ff', store:null,
-    exits: { left: 'roofgarden', right: 'backhall' }, stairsDown:'directory', trees:[],
+    name: 'Toy Bridge', type: 'bridge', sign: 'TOY BRIDGE', palette: ['#19142d', '#46336f'], floor: 565,
+    platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 120, y: 392, w: 260, h: 18 }, { x: 585, y: 392, w: 240, h: 18 }],
+    escalators: [{ x1: 625, y1: 565, x2: 425, y2: 392, dir: -1 }],
+    exits: [{ side: 'left', to: 'backhall' }, { side: 'right', to: 'fountain' }],
     items: [],
-    npcs: [
-      { id:'builder', name:'Tomo the Builder', x:500, y:500, color:'#8fd7ff', leisure:[
-        'I build worlds from spare rails and an unreasonable amount of optimism.',
-        'The bridge looks serious, but secretly it enjoys being admired.'
-      ], objective:{ id:'ribbon', need:'ribbon', doneText:'A ribbon! Perfect for the tiny parade flag I was missing.', reward:'teddy', rewardText:'I found this tiny teddy under a crate. It deserves a better story.' }}
-    ]
+    trees: [],
+    npcs: [{ id: 'builder', name: 'Tomo', x: 515, y: 530, platformY: 565, color: '#91d7ff', leisure: ['This bridge looks serious, but secretly it enjoys applause.', 'I build small worlds from rails and optimism.'], objective: { need: 'ribbon', doneText: 'A ribbon! Perfect for the tiny parade flag.', reward: 'teddy', rewardText: 'I found this tiny teddy under a crate. It deserves a new home.' } }],
+    decorations: [{ type: 'bridgeRails', x: 470, y: 320 }]
   },
   backhall: {
-    name: 'Back Hall', bg: ['#191919','#3a3a3a'], accent:'#d0d0d0', store:null,
-    exits: { left: 'toybridge', right: 'atrium' }, stairsUp:'foodcourt', trees:[{x:840,y:514}],
+    name: 'Back Hall', type: 'service', sign: 'BACK HALL', palette: ['#171717', '#434343'], floor: 565,
+    platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 120, y: 402, w: 210, h: 18 }, { x: 635, y: 402, w: 210, h: 18 }],
+    escalators: [{ x1: 318, y1: 565, x2: 520, y2: 402, dir: 1 }],
+    exits: [{ side: 'left', to: 'toybridge' }, { side: 'right', to: 'atrium' }],
     items: [],
-    npcs: [
-      { id:'porter', name:'Porter Jax', x:260, y:500, color:'#ffb980', leisure:[
-        'Behind every shiny mall is a hallway doing all the real work.',
-        'I like crates. They never interrupt.'
-      ], objective:{ id:'sandwich', need:'sandwich', doneText:'You legend. A sandwich for the long haul.', reward:'scarf', rewardText:'Take this red scarf I found in the lost-and-found trolley.' }}
-    ]
+    trees: [{ x: 820, y: 550 }],
+    npcs: [{ id: 'porter', name: 'Porter Jax', x: 270, y: 530, platformY: 565, color: '#ffbc84', leisure: ['Behind every shiny mall is a hallway doing all the real work.', 'Crates never interrupt. That is why I trust them.'], objective: { need: 'sandwich', doneText: 'You legend. A sandwich for the long haul.', reward: 'scarf', rewardText: 'Take this red scarf from the lost-and-found trolley.' } }],
+    decorations: [{ type: 'crates', x: 620, y: 505 }]
   }
 };
 
@@ -174,75 +166,65 @@ let state;
 function init() {
   state = {
     scene: 'atrium',
-    player: { x: 120, y: FLOOR_Y - 38, w: 28, h: 38, vx: 0, vy: 0, onGround: true },
+    player: { x: 82, y: 500, w: 26, h: 34, vx: 0, vy: 0, onGround: false },
     inventory: [],
-    completedObjectives: {},
-    messages: [],
-    dialogueCooldown: 0,
-    lastActionText: 'Walk around the atrium and press TALK when you meet someone.'
+    actionText: 'The mall feels alive again. Explore and keep the platforming energy.',
   };
   for (const scene of Object.values(scenes)) {
     for (const item of scene.items) item.taken = false;
     for (const npc of scene.npcs) {
-      if (npc.objective) npc.objective.completed = false;
       npc.leisureIndex = 0;
+      if (npc.objective) npc.objective.completed = false;
     }
   }
-  updateSidePanels();
-  setMessage(state.lastActionText);
+  updatePanels();
+  setMessage(state.actionText);
 }
 
-function setMessage(text) {
-  state.lastActionText = text;
-  messageEl.textContent = text;
-}
-
+function setMessage(text) { state.actionText = text; messageEl.textContent = text; }
 function hasItem(key) { return state.inventory.includes(key); }
 function addItem(key) { if (!hasItem(key)) state.inventory.push(key); }
-function removeItem(key) { state.inventory = state.inventory.filter(k => k !== key); }
+function removeItem(key) { state.inventory = state.inventory.filter(i => i !== key); }
+function scene() { return scenes[state.scene]; }
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
-function updateSidePanels() {
-  const scene = scenes[state.scene];
-  screenNameEl.textContent = scene.name;
+function updatePanels() {
+  screenNameEl.textContent = scene().name;
   inventoryCountEl.textContent = state.inventory.length;
-
+  inventoryListEl.innerHTML = state.inventory.length ? state.inventory.map(k => `<li>${itemInfo[k].icon} ${itemInfo[k].label}</li>`).join('') : '<li>Empty pockets.</li>';
   const objectives = [];
   let done = 0;
-  for (const scene of Object.values(scenes)) {
-    for (const npc of scene.npcs) {
-      if (npc.objective) {
-        const text = `${npc.name}: bring ${itemInfo[npc.objective.need].label}`;
-        objectives.push({ text, done: !!npc.objective.completed });
-        if (npc.objective.completed) done++;
-      }
+  for (const sc of Object.values(scenes)) {
+    for (const npc of sc.npcs) {
+      if (!npc.objective) continue;
+      if (npc.objective.completed) done++;
+      objectives.push({ done: npc.objective.completed, text: `${npc.name}: bring ${itemInfo[npc.objective.need].label}` });
     }
   }
   objectivesDoneEl.textContent = done;
   objectivesTotalEl.textContent = objectives.length;
   objectiveListEl.innerHTML = objectives.map(o => `<li>${o.done ? '✅' : '⬜'} ${o.text}</li>`).join('');
-  inventoryListEl.innerHTML = state.inventory.length
-    ? state.inventory.map(k => `<li>🎒 ${itemInfo[k].label}</li>`).join('')
-    : '<li>Empty pockets.</li>';
 }
 
-function getScene() { return scenes[state.scene]; }
-
-function justPressed(name, active) {
-  if (active && !actionLatch[name]) { actionLatch[name] = true; return true; }
-  if (!active) actionLatch[name] = false;
-  return false;
+function rectOverlap(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
-function dist(a, b) {
-  return Math.hypot((a.x + (a.w || 0) / 2) - b.x, (a.y + (a.h || 0) / 2) - b.y);
+function lineDistance(px, py, x1, y1, x2, y2) {
+  const A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
+  const dot = A * C + B * D;
+  const lenSq = C * C + D * D;
+  const t = clamp(dot / lenSq, 0, 1);
+  const lx = x1 + t * C, ly = y1 + t * D;
+  return { dist: Math.hypot(px - lx, py - ly), t, x: lx, y: ly };
 }
 
 function nearestNpc() {
   const p = state.player;
   let best = null;
-  for (const npc of getScene().npcs) {
-    const d = dist(p, { x: npc.x, y: npc.y });
-    if (d < 95 && (!best || d < best.d)) best = { npc, d };
+  for (const npc of scene().npcs) {
+    const d = Math.hypot((p.x + p.w / 2) - npc.x, (p.y + p.h) - npc.platformY);
+    if (d < 82 && (!best || d < best.d)) best = { npc, d };
   }
   return best?.npc || null;
 }
@@ -250,76 +232,63 @@ function nearestNpc() {
 function nearestItem() {
   const p = state.player;
   let best = null;
-  for (const item of getScene().items) {
+  for (const item of scene().items) {
     if (item.taken) continue;
-    const d = dist(p, { x: item.x, y: item.y });
-    if (d < 80 && (!best || d < best.d)) best = { item, d };
+    const d = Math.hypot((p.x + p.w / 2) - item.x, (p.y + p.h) - item.y);
+    if (d < 74 && (!best || d < best.d)) best = { item, d };
   }
   return best?.item || null;
 }
 
-function useTalk() {
+function justPressed(name, active) {
+  if (active && !actionLatch[name]) { actionLatch[name] = true; return true; }
+  if (!active) actionLatch[name] = false;
+  return false;
+}
+
+function talk() {
   const npc = nearestNpc();
-  if (!npc) return setMessage('Nobody close enough for a proper chat.');
+  if (!npc) return setMessage('Nobody close enough for a proper Dizzy-style natter.');
+  const line = npc.leisure[npc.leisureIndex++ % npc.leisure.length];
   if (npc.objective && !npc.objective.completed) {
-    const need = itemInfo[npc.objective.need].label;
-    const leisure = npc.leisure[npc.leisureIndex++ % npc.leisure.length];
-    setMessage(`${npc.name}: ${leisure} Also... if you bring me ${need}, I might have something useful for you.`);
+    setMessage(`${npc.name}: ${line} Also, if you bring me ${itemInfo[npc.objective.need].label}, I might have something useful.`);
   } else {
-    const leisure = npc.leisure[npc.leisureIndex++ % npc.leisure.length];
-    setMessage(`${npc.name}: ${leisure}`);
+    setMessage(`${npc.name}: ${line}`);
   }
 }
 
-function useTake() {
+function take() {
   const item = nearestItem();
-  if (!item) return setMessage('Nothing here to take right now.');
+  if (!item) return setMessage('There is nothing here you can sensibly pocket.');
   item.taken = true;
   addItem(item.key);
-  updateSidePanels();
-  setMessage(`You picked up ${itemInfo[item.key].label}.`);
+  updatePanels();
+  setMessage(`You took ${itemInfo[item.key].label}. ${itemInfo[item.key].icon}`);
 }
 
-function useGive() {
+function give() {
   const npc = nearestNpc();
-  if (!npc) return setMessage('There is nobody nearby to give something to.');
-  if (!npc.objective || npc.objective.completed) return setMessage(`${npc.name} smiles, but does not need anything right now.`);
-  const need = npc.objective.need;
-  if (!hasItem(need)) return setMessage(`${npc.name} still needs ${itemInfo[need].label}.`);
-  removeItem(need);
+  if (!npc) return setMessage('No one nearby wants a handoff.');
+  if (!npc.objective || npc.objective.completed) return setMessage(`${npc.name} has no quest item in mind right now.`);
+  if (!hasItem(npc.objective.need)) return setMessage(`${npc.name} still needs ${itemInfo[npc.objective.need].label}.`);
+  removeItem(npc.objective.need);
   npc.objective.completed = true;
   addItem(npc.objective.reward);
-  updateSidePanels();
+  updatePanels();
   setMessage(`${npc.name}: ${npc.objective.doneText} ${npc.objective.rewardText}`);
 }
 
-function sceneTransition(dir) {
-  const scene = getScene();
-  if (dir === 'left' && scene.exits.left) {
-    state.scene = scene.exits.left;
-    state.player.x = W - 70;
-  } else if (dir === 'right' && scene.exits.right) {
-    state.scene = scene.exits.right;
-    state.player.x = 40;
-  }
-  state.player.y = FLOOR_Y - state.player.h;
-  state.player.vx = 0;
-  state.player.vy = 0;
-  updateSidePanels();
-  setMessage(`You enter ${getScene().name}.`);
-}
-
-function stairTransition(type) {
-  const scene = getScene();
-  const dest = type === 'up' ? scene.stairsUp : scene.stairsDown;
-  if (!dest) return;
-  state.scene = dest;
-  state.player.x = type === 'up' ? 760 : 180;
-  state.player.y = FLOOR_Y - state.player.h;
-  state.player.vx = 0;
-  state.player.vy = 0;
-  updateSidePanels();
-  setMessage(`You take the stairs ${type} to ${getScene().name}.`);
+function moveScene(direction) {
+  const exit = scene().exits.find(e => e.side === direction);
+  if (!exit) return;
+  state.scene = exit.to;
+  const p = state.player;
+  p.x = direction === 'left' ? W - 64 : 38;
+  p.y = 490;
+  p.vy = 0;
+  p.vx = 0;
+  updatePanels();
+  setMessage(`You arrive in ${scene().name}.`);
 }
 
 function update() {
@@ -327,178 +296,238 @@ function update() {
   const left = keys['arrowleft'] || keys['a'] || touchState.left;
   const right = keys['arrowright'] || keys['d'] || touchState.right;
   const jump = keys['arrowup'] || keys['w'] || keys[' '] || touchState.jump;
-  const talk = keys['t'] || touchState.talk;
-  const take = keys['e'] || touchState.take;
-  const give = keys['g'] || touchState.give;
+  const talkBtn = keys['t'] || touchState.talk;
+  const takeBtn = keys['e'] || touchState.take;
+  const giveBtn = keys['g'] || touchState.give;
 
-  p.vx = (left ? -3.2 : 0) + (right ? 3.2 : 0);
-  if (jump && p.onGround) {
-    p.vy = -10.8;
-    p.onGround = false;
-  }
+  p.vx = ((left ? -1 : 0) + (right ? 1 : 0)) * 3.15;
 
-  p.vy += GRAVITY;
-  p.x += p.vx;
-  p.y += p.vy;
-
-  const stairsUpZone = { x: 760, y: 500, w: 110, h: 40 };
-  const stairsDownZone = { x: 90, y: 500, w: 110, h: 40 };
-
-  if (p.y >= FLOOR_Y - p.h) {
-    p.y = FLOOR_Y - p.h;
-    p.vy = 0;
-    p.onGround = true;
-  }
-
-  if (p.x < -20) sceneTransition('left');
-  if (p.x > W + 20) sceneTransition('right');
-
-  if (jump && p.onGround) {
-    if (rectOverlap(p, stairsUpZone) && getScene().stairsUp) stairTransition('up');
-    if (rectOverlap(p, stairsDownZone) && getScene().stairsDown) stairTransition('down');
-  }
-
-  if (justPressed('talk', !!talk)) useTalk();
-  if (justPressed('take', !!take)) useTake();
-  if (justPressed('give', !!give)) useGive();
-}
-
-function rectOverlap(a, b) {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-}
-
-function drawBackground(scene) {
-  const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, scene.bg[0]);
-  g.addColorStop(1, scene.bg[1]);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, W, H);
-
-  ctx.fillStyle = 'rgba(255,255,255,0.06)';
-  for (let i = 0; i < 12; i++) ctx.fillRect(i * 80, 145, 50, 8);
-
-  ctx.fillStyle = '#d7d7d7';
-  ctx.fillRect(0, FLOOR_Y, W, 100);
-  ctx.fillStyle = scene.accent;
-  ctx.fillRect(0, FLOOR_Y + 74, W, 8);
-
-  if (scene.store) {
-    ctx.fillStyle = '#101418';
-    ctx.fillRect(220, 175, 520, 120);
-    ctx.strokeStyle = scene.accent;
-    ctx.lineWidth = 4;
-    ctx.strokeRect(220, 175, 520, 120);
-    ctx.fillStyle = scene.accent;
-    ctx.font = 'bold 42px monospace';
-    ctx.fillText(scene.store, 300, 245);
-
-    for (let i = 0; i < 4; i++) {
-      const x = 250 + i * 120;
-      ctx.fillStyle = '#1f2731';
-      ctx.fillRect(x, 300, 80, 110);
-      ctx.strokeStyle = '#fff';
-      ctx.strokeRect(x, 300, 80, 110);
-      ctx.fillStyle = ['#ff7aa2','#ffe16d','#7de8ff','#84ffae'][i % 4];
-      ctx.fillRect(x + 14, 330, 50, 40);
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(x + 20, 380, 38, 10);
+  let onEscalator = false;
+  let jumpedFromEscalator = false;
+  for (const esc of scene().escalators) {
+    const probe = lineDistance(p.x + p.w / 2, p.y + p.h, esc.x1, esc.y1, esc.x2, esc.y2);
+    if (probe.dist < 13 && p.x + p.w / 2 > Math.min(esc.x1, esc.x2) - 10 && p.x + p.w / 2 < Math.max(esc.x1, esc.x2) + 10) {
+      onEscalator = true;
+      p.onGround = true;
+      p.vy = 0;
+      p.y = probe.y - p.h;
+      if (jump) {
+        p.vy = -10.4;
+        p.onGround = false;
+        onEscalator = false;
+        jumpedFromEscalator = true;
+        break;
+      }
+      p.x += esc.dir * 0.9;
+      if (left) p.x -= 1.5;
+      if (right) p.x += 1.5;
+      break;
     }
   }
 
-  drawStairs(80, scene.stairsDown ? 'STAIRS ↓' : '');
-  drawStairs(750, scene.stairsUp ? 'STAIRS ↑' : '', true);
+  if (!onEscalator) {
+    if (jump && p.onGround && !jumpedFromEscalator) {
+      p.vy = -10.4;
+      p.onGround = false;
+    }
+    p.vy += GRAVITY;
+    p.y += p.vy;
+    p.onGround = false;
 
-  for (const tree of scene.trees) drawTree(tree.x, tree.y);
-}
-
-function drawStairs(x, label, mirrored = false) {
-  ctx.fillStyle = '#7e8ea0';
-  for (let i = 0; i < 5; i++) {
-    const stepX = mirrored ? x - i * 16 : x + i * 16;
-    const stepY = 520 - i * 10;
-    ctx.fillRect(stepX, stepY, 50, 10);
+    for (const plat of scene().platforms) {
+      const prevFeet = p.y + p.h - p.vy;
+      if (p.x + p.w > plat.x && p.x < plat.x + plat.w && prevFeet <= plat.y && p.y + p.h >= plat.y) {
+        p.y = plat.y - p.h;
+        p.vy = 0;
+        p.onGround = true;
+      }
+    }
   }
-  if (label) {
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 14px monospace';
-    ctx.fillText(label, mirrored ? x - 40 : x + 8, 458);
+
+  p.x += p.vx;
+  if (p.y > H + 60) {
+    p.x = 70; p.y = 490; p.vx = 0; p.vy = 0;
   }
+  if (p.x < -30) moveScene('left');
+  if (p.x > W + 30) moveScene('right');
+
+  if (justPressed('talk', !!talkBtn)) talk();
+  if (justPressed('take', !!takeBtn)) take();
+  if (justPressed('give', !!giveBtn)) give();
 }
 
-function drawTree(x, y) {
-  ctx.fillStyle = '#6b4520';
-  ctx.fillRect(x + 12, y - 30, 10, 32);
-  ctx.fillStyle = '#2abd55';
-  ctx.beginPath(); ctx.arc(x + 18, y - 42, 28, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(x + 2, y - 22, 20, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(x + 34, y - 18, 18, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#c79a63';
-  ctx.fillRect(x, y, 40, 12);
-}
-
-function drawNpc(npc) {
-  ctx.fillStyle = npc.color;
+function drawStar(x, y, r, color) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(npc.x, npc.y - 20, 16, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillRect(npc.x - 10, npc.y - 4, 20, 26);
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 13px monospace';
-  ctx.fillText(npc.name, npc.x - 38, npc.y - 40);
-  if (npc.objective && !npc.objective.completed) {
-    ctx.fillStyle = '#ffe16d';
-    ctx.fillText('!', npc.x + 20, npc.y - 25);
+  for (let i = 0; i < 8; i++) {
+    const a = Math.PI / 4 * i;
+    ctx.moveTo(Math.cos(a) * (r * 0.35), Math.sin(a) * (r * 0.35));
+    ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
   }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawEscalator(e) {
+  ctx.strokeStyle = '#9ceeff';
+  ctx.lineWidth = 18;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(e.x1, e.y1); ctx.lineTo(e.x2, e.y2); ctx.stroke();
+  ctx.strokeStyle = '#28495d';
+  ctx.lineWidth = 2;
+  for (let i = 0; i <= 12; i++) {
+    const t = i / 12;
+    const x = e.x1 + (e.x2 - e.x1) * t;
+    const y = e.y1 + (e.y2 - e.y1) * t;
+    ctx.beginPath(); ctx.moveTo(x - 10, y + 8); ctx.lineTo(x + 10, y - 8); ctx.stroke();
+  }
+}
+
+function drawTree(t) {
+  ctx.fillStyle = '#66421f';
+  ctx.fillRect(t.x + 10, t.y - 28, 9, 28);
+  ctx.fillStyle = '#29bd53';
+  for (const [dx,dy,r] of [[14,-42,24],[0,-20,18],[28,-18,18]]) {
+    ctx.beginPath(); ctx.arc(t.x + dx, t.y + dy, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = '#c49d66';
+  ctx.fillRect(t.x - 4, t.y, 40, 10);
+}
+
+function drawShopFront(sc) {
+  ctx.fillStyle = '#12171d';
+  ctx.fillRect(180, 145, 600, 135);
+  ctx.strokeStyle = sc.type === 'shop' ? sc.platforms.length % 2 ? '#ff70df' : '#85ecff' : '#ffd95b';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(180, 145, 600, 135);
+  ctx.fillStyle = sc.type === 'shop' ? '#fff' : '#ffd95b';
+  ctx.font = 'bold 38px monospace';
+  ctx.fillText(sc.store || sc.sign, 260, 228);
+
+  for (let i = 0; i < 4; i++) {
+    const x = 215 + i * 135;
+    ctx.fillStyle = '#1d2632'; ctx.fillRect(x, 285, 92, 115);
+    ctx.strokeStyle = '#fff'; ctx.strokeRect(x, 285, 92, 115);
+    ctx.fillStyle = ['#ff7398','#ffe06e','#7be5ff','#7dff97'][i % 4];
+    ctx.fillRect(x + 18, 318, 56, 34);
+    ctx.fillStyle = '#fff'; ctx.fillRect(x + 22, 364, 48, 12);
+  }
+}
+
+function drawPlatform(plat) {
+  ctx.fillStyle = '#dedede';
+  ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+  ctx.fillStyle = '#78d3da';
+  ctx.fillRect(plat.x, plat.y + plat.h - 6, plat.w, 6);
 }
 
 function drawItem(item) {
   const info = itemInfo[item.key];
   ctx.fillStyle = info.color;
   ctx.beginPath();
-  ctx.roundRect(item.x - 14, item.y - 16, 28, 20, 6);
+  ctx.roundRect(item.x - 11, item.y - 11, 22, 22, 6);
   ctx.fill();
   ctx.fillStyle = '#fff';
   ctx.font = '12px monospace';
-  ctx.fillText(info.label, item.x - 36, item.y - 24);
+  ctx.fillText(info.icon, item.x - 6, item.y + 6);
+}
+
+function drawNpc(npc) {
+  ctx.fillStyle = npc.color;
+  ctx.beginPath();
+  ctx.arc(npc.x, npc.platformY - 18, 14, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(npc.x - 10, npc.platformY - 2, 20, 22);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 12px monospace';
+  ctx.fillText(npc.name, npc.x - 34, npc.platformY - 36);
+  if (npc.objective && !npc.objective.completed) drawStar(npc.x + 24, npc.platformY - 26, 10, '#ffe95b');
 }
 
 function drawPlayer() {
   const p = state.player;
   ctx.fillStyle = 'white';
   ctx.beginPath();
-  ctx.ellipse(p.x + p.w / 2, p.y + p.h / 2, 14, 18, 0, 0, Math.PI * 2);
+  ctx.ellipse(p.x + p.w / 2, p.y + p.h / 2, 13, 16, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = '#111';
-  ctx.fillRect(p.x + 8, p.y + 12, 3, 3);
-  ctx.fillRect(p.x + 16, p.y + 12, 3, 3);
-  ctx.fillRect(p.x + 10, p.y + 20, 8, 2);
+  ctx.fillRect(p.x + 8, p.y + 11, 3, 3);
+  ctx.fillRect(p.x + 15, p.y + 11, 3, 3);
+  ctx.fillRect(p.x + 11, p.y + 18, 6, 2);
   ctx.fillStyle = '#ff3056';
-  ctx.fillRect(p.x - 5, p.y + 16, 8, 8);
-  ctx.fillRect(p.x + p.w - 3, p.y + 16, 8, 8);
-  ctx.fillRect(p.x + 4, p.y + p.h - 4, 8, 6);
-  ctx.fillRect(p.x + 16, p.y + p.h - 4, 8, 6);
+  ctx.fillRect(p.x - 5, p.y + 14, 7, 7);
+  ctx.fillRect(p.x + p.w - 2, p.y + 14, 7, 7);
+  ctx.fillRect(p.x + 3, p.y + p.h - 4, 8, 5);
+  ctx.fillRect(p.x + 15, p.y + p.h - 4, 8, 5);
+}
+
+function drawDecor(sc) {
+  for (const d of sc.decorations || []) {
+    if (d.type === 'directory') {
+      ctx.fillStyle = '#f7efc8'; ctx.fillRect(d.x, d.y, 78, 52); ctx.strokeStyle = '#222'; ctx.strokeRect(d.x, d.y, 78, 52);
+      ctx.fillStyle = '#222'; ctx.font = 'bold 10px monospace'; ctx.fillText('DIRECTORY', d.x + 6, d.y + 18); ctx.font = '9px monospace'; ctx.fillText('YOU ARE HERE', d.x + 7, d.y + 34);
+    }
+    if (d.type === 'fountain') {
+      ctx.fillStyle = '#9eefff'; ctx.beginPath(); ctx.ellipse(d.x, d.y + 24, 70, 18, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#dffcff'; ctx.fillRect(d.x - 10, d.y - 8, 20, 38); ctx.fillRect(d.x - 34, d.y + 18, 68, 10);
+      for (let i = 0; i < 5; i++) { ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.moveTo(d.x, d.y + 18); ctx.lineTo(d.x - 22 + i * 11, d.y - 20 - (i % 2) * 10); ctx.stroke(); }
+    }
+    if (d.type === 'bench') {
+      ctx.fillStyle = '#8c6134'; ctx.fillRect(d.x, d.y, 84, 10); ctx.fillRect(d.x + 8, d.y - 18, 10, 28); ctx.fillRect(d.x + 64, d.y - 18, 10, 28);
+    }
+    if (d.type === 'crates') {
+      for (let i = 0; i < 3; i++) { const x = d.x + i * 34; ctx.fillStyle = '#7d5a31'; ctx.fillRect(x, d.y - (i % 2) * 18, 30, 30); ctx.strokeStyle = '#caa06a'; ctx.strokeRect(x, d.y - (i % 2) * 18, 30, 30); }
+    }
+    if (d.type === 'bridgeRails') {
+      ctx.strokeStyle = '#b9d2ff'; ctx.lineWidth = 4; ctx.strokeRect(d.x - 200, d.y, 400, 30);
+    }
+  }
+}
+
+function drawSceneTitle(sc) {
+  ctx.fillStyle = '#ff3056';
+  ctx.font = 'bold 72px sans-serif';
+  ctx.fillText('DIZZY', 300, 86);
+  ctx.fillStyle = '#2ce6ff';
+  ctx.fillText('MALL', 584, 86);
+  drawStar(266, 70, 18, '#ff3056');
+  drawStar(901, 70, 18, '#ff3056');
+  ctx.fillStyle = '#fff';
+  ctx.font = '15px monospace';
+  ctx.fillText(sc.name.toUpperCase(), 410, 118);
 }
 
 function drawHints() {
   const npc = nearestNpc();
   const item = nearestItem();
-  ctx.fillStyle = 'rgba(0,0,0,0.55)';
-  ctx.fillRect(20, 20, 580, 48);
+  ctx.fillStyle = 'rgba(0,0,0,0.65)';
+  ctx.fillRect(18, 18, 645, 52);
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold 18px monospace';
-  const parts = [];
-  if (npc) parts.push(`💬 TALK with ${npc.name}`);
-  if (item) parts.push(`🤏 TAKE ${itemInfo[item.key].label}`);
-  if (npc && npc.objective && !npc.objective.completed && hasItem(npc.objective.need)) parts.push(`🎁 GIVE ${itemInfo[npc.objective.need].label}`);
-  if (!parts.length) parts.push('Explore, jump on the stairs, and chat with the mall crowd.');
-  ctx.fillText(parts.join('  •  '), 34, 50);
+  ctx.font = 'bold 16px monospace';
+  const hints = [];
+  if (npc) hints.push(`💬 TALK ${npc.name}`);
+  if (item) hints.push(`🤏 TAKE ${itemInfo[item.key].label}`);
+  if (npc?.objective && !npc.objective.completed && hasItem(npc.objective.need)) hints.push(`🎁 GIVE ${itemInfo[npc.objective.need].label}`);
+  if (!hints.length) hints.push('Explore the platforms, ride the escalators, and poke around the shops.');
+  ctx.fillText(hints.join('   •   '), 32, 50);
 }
 
 function draw() {
-  const scene = getScene();
-  drawBackground(scene);
-  for (const item of scene.items) if (!item.taken) drawItem(item);
-  scene.npcs.forEach(drawNpc);
+  const sc = scene();
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, sc.palette[0]); grad.addColorStop(1, sc.palette[1]);
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+
+  drawSceneTitle(sc);
+  drawShopFront(sc);
+  sc.platforms.forEach(drawPlatform);
+  sc.escalators.forEach(drawEscalator);
+  sc.trees.forEach(drawTree);
+  drawDecor(sc);
+  for (const item of sc.items) if (!item.taken) drawItem(item);
+  sc.npcs.forEach(drawNpc);
   drawPlayer();
   drawHints();
 }
