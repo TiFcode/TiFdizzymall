@@ -15,6 +15,7 @@ const dialogueTextEl = document.getElementById('dialogueText');
 const dialogueOptionsEl = document.getElementById('dialogueOptions');
 const joystickBaseEl = document.getElementById('joystickBase');
 const joystickKnobEl = document.getElementById('joystickKnob');
+const jumpButtonEl = document.getElementById('jumpButton');
 document.getElementById('restart').addEventListener('click', init);
 
 const W = canvas.width;
@@ -273,17 +274,30 @@ function init() {
     }
   }
   updatePanels();
+  syncJumpButtonMode();
   setMessage(state.actionText);
 }
 
 function setMessage(text) { state.actionText = text; messageEl.textContent = text; }
+function syncJumpButtonMode() {
+  if (!jumpButtonEl) return;
+  if (state?.dialogue) {
+    jumpButtonEl.textContent = '✨ SELECT';
+    jumpButtonEl.classList.add('touch-btn-select');
+  } else {
+    jumpButtonEl.textContent = '🦘 JUMP';
+    jumpButtonEl.classList.remove('touch-btn-select');
+  }
+}
 function setDialogue(speaker, text, options = []) {
   state.dialogue = { speaker, text, options, selectedIndex: 0 };
+  syncJumpButtonMode();
   setMessage(`${speaker}: ${text}`);
 }
 function closeDialogue() {
   state.dialogue = null;
   state.activeNpcId = null;
+  syncJumpButtonMode();
 }
 function hasItem(key) { return state.inventory.includes(key); }
 function addItem(key) { if (!hasItem(key)) state.inventory.push(key); }
@@ -604,6 +618,30 @@ function drawStar(x, y, r, color) {
   ctx.restore();
 }
 
+function drawDitherOverlay(alpha = 0.06) {
+  ctx.save();
+  ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+  for (let y = 0; y < H; y += 4) {
+    for (let x = (y / 4) % 2 === 0 ? 0 : 2; x < W; x += 4) ctx.fillRect(x, y, 1, 1);
+  }
+  ctx.fillStyle = `rgba(0,0,0,${alpha * 0.85})`;
+  for (let y = 2; y < H; y += 4) {
+    for (let x = (y / 4) % 2 === 0 ? 2 : 0; x < W; x += 4) ctx.fillRect(x, y, 1, 1);
+  }
+  ctx.restore();
+}
+
+function drawGradientPanel(x, y, w, h, top, bottom, border = '#86f1ff') {
+  const g = ctx.createLinearGradient(x, y, x, y + h);
+  g.addColorStop(0, top);
+  g.addColorStop(1, bottom);
+  ctx.fillStyle = g;
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = border;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x, y, w, h);
+}
+
 function drawEscalator(e) {
   ctx.strokeStyle = '#9ceeff';
   ctx.lineWidth = 18;
@@ -631,8 +669,7 @@ function drawTree(t) {
 }
 
 function drawShopFront(sc) {
-  ctx.fillStyle = '#12171d';
-  ctx.fillRect(180, 145, 600, 135);
+  drawGradientPanel(180, 145, 600, 135, 'rgba(38,53,71,0.96)', 'rgba(13,19,26,0.98)', sc.type === 'shop' ? '#8cecff' : '#ffd95b');
   ctx.strokeStyle = sc.type === 'shop' ? sc.platforms.length % 2 ? '#ff70df' : '#85ecff' : '#ffd95b';
   ctx.lineWidth = 4;
   ctx.strokeRect(180, 145, 600, 135);
@@ -642,7 +679,7 @@ function drawShopFront(sc) {
 
   for (let i = 0; i < 4; i++) {
     const x = 215 + i * 135;
-    ctx.fillStyle = '#1d2632'; ctx.fillRect(x, 285, 92, 115);
+    drawGradientPanel(x, 285, 92, 115, '#263444', '#131d28', '#d5f7ff');
     ctx.strokeStyle = '#fff'; ctx.strokeRect(x, 285, 92, 115);
     ctx.fillStyle = ['#ff7398','#ffe06e','#7be5ff','#7dff97'][i % 4];
     ctx.fillRect(x + 18, 318, 56, 34);
@@ -651,10 +688,15 @@ function drawShopFront(sc) {
 }
 
 function drawPlatform(plat) {
-  ctx.fillStyle = '#dedede';
+  const g = ctx.createLinearGradient(plat.x, plat.y, plat.x, plat.y + plat.h);
+  g.addColorStop(0, '#f3f3f3');
+  g.addColorStop(1, '#bdbdbd');
+  ctx.fillStyle = g;
   ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
   ctx.fillStyle = '#78d3da';
   ctx.fillRect(plat.x, plat.y + plat.h - 6, plat.w, 6);
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  for (let x = plat.x; x < plat.x + plat.w; x += 12) ctx.fillRect(x, plat.y + 3, 6, 1);
 }
 
 function drawItem(item) {
@@ -735,8 +777,7 @@ function drawSceneTitle(sc) {
 function drawHints() {
   const npc = nearestNpc();
   const item = nearestItem();
-  ctx.fillStyle = 'rgba(0,0,0,0.65)';
-  ctx.fillRect(18, 18, 760, 52);
+  drawGradientPanel(18, 18, 760, 52, 'rgba(26,40,56,0.92)', 'rgba(9,14,20,0.92)', '#7edfff');
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 16px monospace';
   const hints = [];
@@ -768,11 +809,7 @@ function wrapCanvasText(text, x, y, maxWidth, lineHeight) {
 function drawDialogueBox() {
   if (!state.dialogue) return;
   const x = 34, y = H - 188, w = W - 68, h = 154;
-  ctx.fillStyle = '#0e141b';
-  ctx.fillRect(x, y, w, h);
-  ctx.strokeStyle = '#86f1ff';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(x, y, w, h);
+  drawGradientPanel(x, y, w, h, '#1b2836', '#0e141b', '#86f1ff');
   ctx.fillStyle = '#ffd84d';
   ctx.font = 'bold 18px monospace';
   ctx.fillText(state.dialogue.speaker, x + 14, y + 24);
@@ -784,11 +821,7 @@ function drawDialogueBox() {
   for (let i = 0; i < (state.dialogue.options || []).length; i++) {
     const option = state.dialogue.options[i];
     const selected = i === (state.dialogue.selectedIndex || 0);
-    ctx.fillStyle = selected ? '#2d5678' : '#18344b';
-    ctx.fillRect(x + 12, oy, w - 24, 24);
-    ctx.strokeStyle = selected ? '#ffd84d' : '#5ec7ff';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x + 12, oy, w - 24, 24);
+    drawGradientPanel(x + 12, oy, w - 24, 24, selected ? '#44759f' : '#26425b', selected ? '#284b67' : '#18344b', selected ? '#ffd84d' : '#5ec7ff');
     ctx.fillStyle = selected ? '#fff7c2' : '#ffffff';
     ctx.font = 'bold 13px monospace';
     ctx.fillText(option.label, x + 20, oy + 16);
@@ -801,6 +834,7 @@ function draw() {
   const grad = ctx.createLinearGradient(0, 0, 0, H);
   grad.addColorStop(0, sc.palette[0]); grad.addColorStop(1, sc.palette[1]);
   ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+  drawDitherOverlay(0.05);
 
   drawSceneTitle(sc);
   drawShopFront(sc);

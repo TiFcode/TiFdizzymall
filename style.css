@@ -34,6 +34,7 @@ body {
   width: 100%;
   height: auto;
   border: 3px solid #86f1ff;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.12);
 }
 .hero-caption {
   margin: 10px 0 0;
@@ -92,7 +93,10 @@ canvas {
   width: 100%;
   height: auto;
   border: 4px solid #86f1ff;
-  background: #000;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0) 18%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.025) 0 2px, rgba(0,0,0,0.025) 2px 4px),
+    #000;
   image-rendering: pixelated;
   box-shadow: 0 0 0 6px #113148;
 }
@@ -268,24 +272,37 @@ button {
 }
 
 .touch-btn-nav {
-  background: #374b6b;
+  background: linear-gradient(180deg, #60749b 0%, #374b6b 65%, #243148 100%);
 }
 .touch-btn {
   margin: 0;
   min-height: 76px;
   border-radius: 16px;
   font-size: 1.08rem;
-  background: #17324a;
+  background: linear-gradient(180deg, #2a5376 0%, #17324a 62%, #112435 100%);
   border: 2px solid #86f1ff;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   touch-action: manipulation;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.15), inset 0 -3px 0 rgba(0,0,0,0.22);
 }
-.touch-btn-jump { background: #b82447; }
-.touch-btn-take { background: #2d6f9e; }
-.touch-btn-give { background: #5d4ab4; }
-.touch-btn-talk { background: #2f8b4f; }
+.touch-btn-jump { background: linear-gradient(180deg, #e44b73 0%, #b82447 65%, #7d1530 100%); }
+.touch-btn-take { background: linear-gradient(180deg, #4b95c4 0%, #2d6f9e 65%, #1f4f73 100%); }
+.touch-btn-give { background: linear-gradient(180deg, #8166de 0%, #5d4ab4 65%, #3c2d7f 100%); }
+.touch-btn-talk { background: linear-gradient(180deg, #47af6b 0%, #2f8b4f 65%, #1f5d35 100%); }
+
+.touch-btn-select {
+  background: linear-gradient(180deg, #ffd96f 0%, #ffb62f 65%, #c88312 100%) !important;
+  color: #201400;
+  animation: select-spin-glow 1.2s linear infinite;
+}
+
+@keyframes select-spin-glow {
+  0% { box-shadow: inset 0 2px 0 rgba(255,255,255,0.18), inset 0 -3px 0 rgba(0,0,0,0.22), 0 0 0 rgba(255,214,87,0); transform: rotate(0deg); }
+  50% { box-shadow: inset 0 2px 0 rgba(255,255,255,0.18), inset 0 -3px 0 rgba(0,0,0,0.22), 0 0 18px rgba(255,214,87,0.55); }
+  100% { box-shadow: inset 0 2px 0 rgba(255,255,255,0.18), inset 0 -3px 0 rgba(0,0,0,0.22), 0 0 0 rgba(255,214,87,0); transform: rotate(360deg); }
+}
 
 @media (max-width: 1180px) {
   .game-shell { grid-template-columns: 1fr; }
