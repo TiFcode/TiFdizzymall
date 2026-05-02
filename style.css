@@ -124,6 +124,30 @@ button {
   color: #d0e5f9;
 }
 
+.dialogue-box {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 24px;
+  background: rgba(10, 14, 20, 0.92);
+  border: 3px solid #86f1ff;
+  box-shadow: 0 0 0 4px rgba(17, 49, 72, 0.9);
+  padding: 14px 16px;
+}
+
+.dialogue-speaker {
+  color: var(--yellow);
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+.dialogue-text {
+  color: #eef7ff;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
 .touch-controls {
   display: grid;
   grid-template-columns: 1.1fr 1.5fr;

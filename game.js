@@ -7,6 +7,7 @@ const objectivesDoneEl = document.getElementById('objectivesDone');
 const objectivesTotalEl = document.getElementById('objectivesTotal');
 const inventoryListEl = document.getElementById('inventoryList');
 const objectiveListEl = document.getElementById('objectiveList');
+const nearbyListEl = document.getElementById('nearbyList');
 const messageEl = document.getElementById('message');
 document.getElementById('restart').addEventListener('click', init);
 
@@ -184,6 +185,7 @@ function init() {
     player: { x: 82, y: 500, w: 26, h: 34, vx: 0, vy: 0, onGround: false },
     inventory: [],
     actionText: 'The mall feels alive again. Explore and keep the platforming energy.',
+    dialogue: null,
   };
   for (const scene of Object.values(scenes)) {
     for (const item of scene.items) item.taken = false;
@@ -197,6 +199,7 @@ function init() {
 }
 
 function setMessage(text) { state.actionText = text; messageEl.textContent = text; }
+function setDialogue(speaker, text) { state.dialogue = { speaker, text }; setMessage(`${speaker}: ${text}`); }
 function hasItem(key) { return state.inventory.includes(key); }
 function addItem(key) { if (!hasItem(key)) state.inventory.push(key); }
 function removeItem(key) { state.inventory = state.inventory.filter(i => i !== key); }
@@ -219,6 +222,17 @@ function updatePanels() {
   objectivesDoneEl.textContent = done;
   objectivesTotalEl.textContent = objectives.length;
   objectiveListEl.innerHTML = objectives.map(o => `<li>${o.done ? '✅' : '⬜'} ${o.text}</li>`).join('');
+
+  const nearby = [];
+  const npc = nearestNpc();
+  const item = nearestItem();
+  if (npc) {
+    nearby.push(`💬 ${npc.name}`);
+    if (npc.objective && !npc.objective.completed) nearby.push(`Needs: ${itemInfo[npc.objective.need].label}`);
+    if (npc.objective && !npc.objective.completed && hasItem(npc.objective.need)) nearby.push(`You can GIVE now`);
+  }
+  if (item) nearby.push(`🤏 ${itemInfo[item.key].label}`);
+  nearbyListEl.innerHTML = nearby.length ? nearby.map(x => `<li>${x}</li>`).join('') : '<li>Walk up to someone or something interesting.</li>';
 }
 
 function rectOverlap(a, b) {
@@ -263,12 +277,15 @@ function justPressed(name, active) {
 
 function talk() {
   const npc = nearestNpc();
-  if (!npc) return setMessage('Nobody close enough for a proper Dizzy-style natter.');
+  if (!npc) {
+    state.dialogue = null;
+    return setMessage('Nobody close enough for a proper Dizzy-style natter.');
+  }
   const line = npc.leisure[npc.leisureIndex++ % npc.leisure.length];
   if (npc.objective && !npc.objective.completed) {
-    setMessage(`${npc.name}: ${line} Also, if you bring me ${itemInfo[npc.objective.need].label}, I might have something useful.`);
+    setDialogue(npc.name, `${line} Also, if you bring me ${itemInfo[npc.objective.need].label}, I might have something useful.`);
   } else {
-    setMessage(`${npc.name}: ${line}`);
+    setDialogue(npc.name, line);
   }
 }
 
@@ -278,6 +295,7 @@ function take() {
   item.taken = true;
   addItem(item.key);
   updatePanels();
+  state.dialogue = null;
   setMessage(`You took ${itemInfo[item.key].label}. ${itemInfo[item.key].icon}`);
 }
 
@@ -290,7 +308,7 @@ function give() {
   npc.objective.completed = true;
   addItem(npc.objective.reward);
   updatePanels();
-  setMessage(`${npc.name}: ${npc.objective.doneText} ${npc.objective.rewardText}`);
+  setDialogue(npc.name, `${npc.objective.doneText} ${npc.objective.rewardText}`);
 }
 
 function triggerAction(action) {
@@ -375,6 +393,8 @@ function update() {
   if (justPressed('talk', !!talkBtn)) talk();
   if (justPressed('take', !!takeBtn)) take();
   if (justPressed('give', !!giveBtn)) give();
+
+  updatePanels();
 }
 
 function drawStar(x, y, r, color) {
@@ -524,15 +544,49 @@ function drawHints() {
   const npc = nearestNpc();
   const item = nearestItem();
   ctx.fillStyle = 'rgba(0,0,0,0.65)';
-  ctx.fillRect(18, 18, 645, 52);
+  ctx.fillRect(18, 18, 760, 52);
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 16px monospace';
   const hints = [];
   if (npc) hints.push(`💬 TALK ${npc.name}`);
   if (item) hints.push(`🤏 TAKE ${itemInfo[item.key].label}`);
+  if (npc?.objective && !npc.objective.completed) hints.push(`Needs ${itemInfo[npc.objective.need].label}`);
   if (npc?.objective && !npc.objective.completed && hasItem(npc.objective.need)) hints.push(`🎁 GIVE ${itemInfo[npc.objective.need].label}`);
   if (!hints.length) hints.push('Explore the platforms, ride the escalators, and poke around the shops.');
   ctx.fillText(hints.join('   •   '), 32, 50);
+}
+
+function drawDialogueBox() {
+  if (!state.dialogue) return;
+  const x = 24, y = H - 132, w = W - 48, h = 108;
+  ctx.fillStyle = 'rgba(10,14,20,0.92)';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = '#86f1ff';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = '#ffd84d';
+  ctx.font = 'bold 20px monospace';
+  ctx.fillText(state.dialogue.speaker, x + 16, y + 28);
+  ctx.fillStyle = '#eef7ff';
+  ctx.font = '16px monospace';
+  wrapText(state.dialogue.text, x + 16, y + 56, w - 32, 22);
+}
+
+function wrapText(text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  let line = '';
+  let yy = y;
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      ctx.fillText(line, x, yy);
+      line = word;
+      yy += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  if (line) ctx.fillText(line, x, yy);
 }
 
 function draw() {
@@ -551,6 +605,7 @@ function draw() {
   sc.npcs.forEach(drawNpc);
   drawPlayer();
   drawHints();
+  drawDialogueBox();
 }
 
 function loop() {
