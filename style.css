@@ -84,6 +84,9 @@ h1 span {
   flex-direction: column;
   gap: 12px;
 }
+.stage-wrap {
+  position: relative;
+}
 canvas {
   width: 100%;
   height: auto;
@@ -124,28 +127,51 @@ button {
   color: #d0e5f9;
 }
 
-.dialogue-box {
+.dialogue-overlay {
   position: absolute;
   left: 24px;
   right: 24px;
   bottom: 24px;
-  background: rgba(10, 14, 20, 0.92);
+  background: rgba(10, 14, 20, 0.94);
   border: 3px solid #86f1ff;
   box-shadow: 0 0 0 4px rgba(17, 49, 72, 0.9);
   padding: 14px 16px;
+  z-index: 3;
 }
 
-.dialogue-speaker {
+.dialogue-overlay.hidden {
+  display: none;
+}
+
+.dialogue-title {
   color: var(--yellow);
   font-weight: 700;
   margin-bottom: 8px;
   font-size: 1rem;
 }
 
-.dialogue-text {
+.dialogue-body {
   color: #eef7ff;
   font-size: 1rem;
   line-height: 1.4;
+  margin-bottom: 12px;
+}
+
+.dialogue-options {
+  display: grid;
+  gap: 8px;
+}
+
+.dialogue-option {
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  text-align: left;
+  border-radius: 10px;
+  border: 2px solid #5ec7ff;
+  background: #18344b;
+  color: #fff;
+  font-weight: 600;
 }
 
 .touch-controls {
@@ -166,10 +192,28 @@ button {
   color: var(--line);
   font-weight: 700;
 }
-.joystick-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+.joystick-base {
+  width: 160px;
+  height: 160px;
+  margin: 0 auto;
+  border-radius: 50%;
+  border: 3px solid #86f1ff;
+  background: radial-gradient(circle at 35% 35%, #2e5778, #17324a 65%);
+  position: relative;
+  touch-action: none;
+}
+
+.joystick-knob {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #c4f5ff, #6bd8ff 65%);
+  border: 3px solid #ffffff;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.35);
 }
 .action-cluster {
   display: grid;
@@ -192,7 +236,6 @@ button {
 .touch-btn-take { background: #2d6f9e; }
 .touch-btn-give { background: #5d4ab4; }
 .touch-btn-talk { background: #2f8b4f; }
-.touch-btn-dir { background: #214866; }
 
 @media (max-width: 1180px) {
   .game-shell { grid-template-columns: 1fr; }

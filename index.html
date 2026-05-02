@@ -27,14 +27,20 @@
 
     <section class="game-shell">
       <div class="game-column">
-        <canvas id="game" width="960" height="640" aria-label="TiFdizzymall game"></canvas>
+        <div class="stage-wrap">
+          <canvas id="game" width="960" height="640" aria-label="TiFdizzymall game"></canvas>
+          <section id="dialogueOverlay" class="dialogue-overlay hidden" aria-live="polite">
+            <div class="dialogue-title" id="dialogueSpeaker">Someone</div>
+            <div class="dialogue-body" id="dialogueText">...</div>
+            <div class="dialogue-options" id="dialogueOptions"></div>
+          </section>
+        </div>
 
         <section class="touch-controls" aria-label="Touch controls">
           <div class="joystick-cluster">
-            <div class="joystick-title">🕹️ Joystick</div>
-            <div class="joystick-grid">
-              <button class="touch-btn touch-btn-dir" data-touch="left">⬅️ LEFT</button>
-              <button class="touch-btn touch-btn-dir" data-touch="right">➡️ RIGHT</button>
+            <div class="joystick-title">🕹️ Left Thumb</div>
+            <div id="joystickBase" class="joystick-base">
+              <div id="joystickKnob" class="joystick-knob"></div>
             </div>
           </div>
           <div class="action-cluster">

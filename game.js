@@ -9,6 +9,12 @@ const inventoryListEl = document.getElementById('inventoryList');
 const objectiveListEl = document.getElementById('objectiveList');
 const nearbyListEl = document.getElementById('nearbyList');
 const messageEl = document.getElementById('message');
+const dialogueOverlayEl = document.getElementById('dialogueOverlay');
+const dialogueSpeakerEl = document.getElementById('dialogueSpeaker');
+const dialogueTextEl = document.getElementById('dialogueText');
+const dialogueOptionsEl = document.getElementById('dialogueOptions');
+const joystickBaseEl = document.getElementById('joystickBase');
+const joystickKnobEl = document.getElementById('joystickKnob');
 document.getElementById('restart').addEventListener('click', init);
 
 const W = canvas.width;
@@ -17,13 +23,14 @@ const GRAVITY = 0.56;
 const keys = {};
 const touchState = { left: false, right: false, jump: false, take: false, give: false, talk: false };
 const actionLatch = { take: false, give: false, talk: false };
+const joystickState = { active: false, x: 0, y: 0, pointerId: null };
 
 window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
 for (const btn of document.querySelectorAll('[data-touch]')) {
   const action = btn.dataset.touch;
-  const isDirectional = action === 'left' || action === 'right' || action === 'jump';
+  const isDirectional = action === 'jump';
   const on = (e) => {
     e.preventDefault();
     if (isDirectional) {
@@ -47,6 +54,53 @@ for (const btn of document.querySelectorAll('[data-touch]')) {
     if (!isDirectional) triggerAction(action);
   });
 }
+
+function setJoystickFromClient(clientX, clientY) {
+  const rect = joystickBaseEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  let dx = clientX - cx;
+  let dy = clientY - cy;
+  const maxR = rect.width * 0.32;
+  const len = Math.hypot(dx, dy) || 1;
+  if (len > maxR) {
+    dx = dx / len * maxR;
+    dy = dy / len * maxR;
+  }
+  joystickState.x = dx / maxR;
+  joystickState.y = dy / maxR;
+  joystickKnobEl.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+}
+
+function resetJoystick() {
+  joystickState.active = false;
+  joystickState.x = 0;
+  joystickState.y = 0;
+  joystickState.pointerId = null;
+  joystickKnobEl.style.transform = 'translate(-50%, -50%)';
+}
+
+joystickBaseEl.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  joystickState.active = true;
+  joystickState.pointerId = e.pointerId;
+  joystickBaseEl.setPointerCapture?.(e.pointerId);
+  setJoystickFromClient(e.clientX, e.clientY);
+});
+
+joystickBaseEl.addEventListener('pointermove', (e) => {
+  if (!joystickState.active || joystickState.pointerId !== e.pointerId) return;
+  e.preventDefault();
+  setJoystickFromClient(e.clientX, e.clientY);
+});
+
+const endJoystick = (e) => {
+  if (joystickState.pointerId !== null && e.pointerId !== undefined && joystickState.pointerId !== e.pointerId) return;
+  resetJoystick();
+};
+
+joystickBaseEl.addEventListener('pointerup', endJoystick);
+joystickBaseEl.addEventListener('pointercancel', endJoystick);
 
 const itemInfo = {
   scarf: { label: 'Red Scarf', color: '#ff5b77', icon: '🧣' },
@@ -186,6 +240,7 @@ function init() {
     inventory: [],
     actionText: 'The mall feels alive again. Explore and keep the platforming energy.',
     dialogue: null,
+    activeNpcId: null,
   };
   for (const scene of Object.values(scenes)) {
     for (const item of scene.items) item.taken = false;
@@ -199,7 +254,16 @@ function init() {
 }
 
 function setMessage(text) { state.actionText = text; messageEl.textContent = text; }
-function setDialogue(speaker, text) { state.dialogue = { speaker, text }; setMessage(`${speaker}: ${text}`); }
+function setDialogue(speaker, text, options = []) {
+  state.dialogue = { speaker, text, options };
+  renderDialogue();
+  setMessage(`${speaker}: ${text}`);
+}
+function closeDialogue() {
+  state.dialogue = null;
+  state.activeNpcId = null;
+  renderDialogue();
+}
 function hasItem(key) { return state.inventory.includes(key); }
 function addItem(key) { if (!hasItem(key)) state.inventory.push(key); }
 function removeItem(key) { state.inventory = state.inventory.filter(i => i !== key); }
@@ -258,6 +322,60 @@ function nearestNpc() {
   return best?.npc || null;
 }
 
+function getNpcDialogue(npc) {
+  const leisure = npc.leisure[npc.leisureIndex++ % npc.leisure.length];
+  const options = [
+    { label: '1. Ask what they are doing here', action: () => setDialogue(npc.name, leisure, buildRootOptions(npc)) },
+  ];
+  if (npc.objective && !npc.objective.completed) {
+    options.push({ label: `2. Ask about the favour`, action: () => setDialogue(npc.name, `I need ${itemInfo[npc.objective.need].label}. Bring it here and I will trade fairly.`, buildRootOptions(npc)) });
+  }
+  if (npc.objective && !npc.objective.completed && hasItem(npc.objective.need)) {
+    options.push({ label: `3. Give ${itemInfo[npc.objective.need].label}`, action: () => give() });
+  }
+  options.push({ label: '0. Leave politely', action: () => closeDialogue() });
+  return { text: leisure, options };
+}
+
+function buildRootOptions(npc) {
+  const opts = [
+    { label: 'Ask for gossip', action: () => setDialogue(npc.name, `${npc.name === 'Mina' ? 'People pretend to shop, but really they come here to overhear destiny.' : 'Every corridor has gossip if you listen harder than the cleaning machines.'}`, buildRootOptions(npc)) },
+    { label: 'Ask what this place is like', action: () => setDialogue(npc.name, npc.leisure[npc.leisureIndex++ % npc.leisure.length], buildRootOptions(npc)) },
+  ];
+  if (npc.objective && !npc.objective.completed) {
+    opts.unshift({ label: `Ask about needed item`, action: () => setDialogue(npc.name, `Bring me ${itemInfo[npc.objective.need].label}. I am not being dramatic; I genuinely need it.`, buildRootOptions(npc)) });
+  }
+  if (npc.objective && !npc.objective.completed && hasItem(npc.objective.need)) {
+    opts.unshift({ label: `Give ${itemInfo[npc.objective.need].label}`, action: () => give() });
+  }
+  opts.push({ label: 'Leave', action: () => closeDialogue() });
+  return opts;
+}
+
+function renderDialogue() {
+  if (!state.dialogue) {
+    dialogueOverlayEl.classList.add('hidden');
+    dialogueOptionsEl.innerHTML = '';
+    return;
+  }
+  dialogueOverlayEl.classList.remove('hidden');
+  dialogueSpeakerEl.textContent = state.dialogue.speaker;
+  dialogueTextEl.textContent = state.dialogue.text;
+  dialogueOptionsEl.innerHTML = '';
+  for (const option of state.dialogue.options || []) {
+    const btn = document.createElement('button');
+    btn.className = 'dialogue-option';
+    btn.textContent = option.label;
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      option.action();
+      renderDialogue();
+      updatePanels();
+    });
+    dialogueOptionsEl.appendChild(btn);
+  }
+}
+
 function nearestItem() {
   const p = state.player;
   let best = null;
@@ -278,15 +396,12 @@ function justPressed(name, active) {
 function talk() {
   const npc = nearestNpc();
   if (!npc) {
-    state.dialogue = null;
+    closeDialogue();
     return setMessage('Nobody close enough for a proper Dizzy-style natter.');
   }
-  const line = npc.leisure[npc.leisureIndex++ % npc.leisure.length];
-  if (npc.objective && !npc.objective.completed) {
-    setDialogue(npc.name, `${line} Also, if you bring me ${itemInfo[npc.objective.need].label}, I might have something useful.`);
-  } else {
-    setDialogue(npc.name, line);
-  }
+  state.activeNpcId = npc.id;
+  const convo = getNpcDialogue(npc);
+  setDialogue(npc.name, convo.text, convo.options);
 }
 
 function take() {
@@ -295,7 +410,7 @@ function take() {
   item.taken = true;
   addItem(item.key);
   updatePanels();
-  state.dialogue = null;
+  closeDialogue();
   setMessage(`You took ${itemInfo[item.key].label}. ${itemInfo[item.key].icon}`);
 }
 
@@ -308,7 +423,7 @@ function give() {
   npc.objective.completed = true;
   addItem(npc.objective.reward);
   updatePanels();
-  setDialogue(npc.name, `${npc.objective.doneText} ${npc.objective.rewardText}`);
+  setDialogue(npc.name, `${npc.objective.doneText} ${npc.objective.rewardText}`, [{ label: 'Continue', action: () => closeDialogue() }]);
 }
 
 function triggerAction(action) {
@@ -332,8 +447,8 @@ function moveScene(direction) {
 
 function update() {
   const p = state.player;
-  const left = keys['arrowleft'] || keys['a'] || touchState.left;
-  const right = keys['arrowright'] || keys['d'] || touchState.right;
+  const left = keys['arrowleft'] || keys['a'] || joystickState.x < -0.2;
+  const right = keys['arrowright'] || keys['d'] || joystickState.x > 0.2;
   const jump = keys['arrowup'] || keys['w'] || keys[' '] || touchState.jump;
   const talkBtn = keys['t'];
   const takeBtn = keys['e'];
@@ -556,39 +671,6 @@ function drawHints() {
   ctx.fillText(hints.join('   •   '), 32, 50);
 }
 
-function drawDialogueBox() {
-  if (!state.dialogue) return;
-  const x = 24, y = H - 132, w = W - 48, h = 108;
-  ctx.fillStyle = 'rgba(10,14,20,0.92)';
-  ctx.fillRect(x, y, w, h);
-  ctx.strokeStyle = '#86f1ff';
-  ctx.lineWidth = 3;
-  ctx.strokeRect(x, y, w, h);
-  ctx.fillStyle = '#ffd84d';
-  ctx.font = 'bold 20px monospace';
-  ctx.fillText(state.dialogue.speaker, x + 16, y + 28);
-  ctx.fillStyle = '#eef7ff';
-  ctx.font = '16px monospace';
-  wrapText(state.dialogue.text, x + 16, y + 56, w - 32, 22);
-}
-
-function wrapText(text, x, y, maxWidth, lineHeight) {
-  const words = text.split(' ');
-  let line = '';
-  let yy = y;
-  for (const word of words) {
-    const test = line ? `${line} ${word}` : word;
-    if (ctx.measureText(test).width > maxWidth && line) {
-      ctx.fillText(line, x, yy);
-      line = word;
-      yy += lineHeight;
-    } else {
-      line = test;
-    }
-  }
-  if (line) ctx.fillText(line, x, yy);
-}
-
 function draw() {
   const sc = scene();
   const grad = ctx.createLinearGradient(0, 0, 0, H);
@@ -605,7 +687,6 @@ function draw() {
   sc.npcs.forEach(drawNpc);
   drawPlayer();
   drawHints();
-  drawDialogueBox();
 }
 
 function loop() {
