@@ -80,6 +80,14 @@ function resetJoystick() {
   joystickKnobEl.style.transform = 'translate(-50%, -50%)';
 }
 
+canvas.addEventListener('pointerdown', (e) => {
+  if (!state?.dialogue) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (W / rect.width);
+  const y = (e.clientY - rect.top) * (H / rect.height);
+  handleDialogueOptionTap(x, y);
+});
+
 joystickBaseEl.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   joystickState.active = true;
@@ -256,13 +264,11 @@ function init() {
 function setMessage(text) { state.actionText = text; messageEl.textContent = text; }
 function setDialogue(speaker, text, options = []) {
   state.dialogue = { speaker, text, options };
-  renderDialogue();
   setMessage(`${speaker}: ${text}`);
 }
 function closeDialogue() {
   state.dialogue = null;
   state.activeNpcId = null;
-  renderDialogue();
 }
 function hasItem(key) { return state.inventory.includes(key); }
 function addItem(key) { if (!hasItem(key)) state.inventory.push(key); }
@@ -353,27 +359,25 @@ function buildRootOptions(npc) {
 }
 
 function renderDialogue() {
-  if (!state.dialogue) {
-    dialogueOverlayEl.classList.add('hidden');
-    dialogueOptionsEl.innerHTML = '';
-    return;
-  }
-  dialogueOverlayEl.classList.remove('hidden');
-  dialogueSpeakerEl.textContent = state.dialogue.speaker;
-  dialogueTextEl.textContent = state.dialogue.text;
+  dialogueOverlayEl.classList.add('hidden');
   dialogueOptionsEl.innerHTML = '';
-  for (const option of state.dialogue.options || []) {
-    const btn = document.createElement('button');
-    btn.className = 'dialogue-option';
-    btn.textContent = option.label;
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      option.action();
-      renderDialogue();
+}
+
+function handleDialogueOptionTap(x, y) {
+  if (!state.dialogue) return false;
+  const boxX = 34, boxY = H - 188, boxW = W - 68;
+  if (x < boxX || x > boxX + boxW || y < boxY || y > boxY + 154) return false;
+  const options = state.dialogue.options || [];
+  let oy = boxY + 78;
+  for (let i = 0; i < options.length; i++) {
+    if (y >= oy && y <= oy + 24) {
+      options[i].action();
       updatePanels();
-    });
-    dialogueOptionsEl.appendChild(btn);
+      return true;
+    }
+    oy += 32;
   }
+  return true;
 }
 
 function nearestItem() {
@@ -447,14 +451,17 @@ function moveScene(direction) {
 
 function update() {
   const p = state.player;
-  const left = keys['arrowleft'] || keys['a'] || joystickState.x < -0.2;
-  const right = keys['arrowright'] || keys['d'] || joystickState.x > 0.2;
+  const left = keys['arrowleft'] || keys['a'] || joystickState.x < -0.12;
+  const right = keys['arrowright'] || keys['d'] || joystickState.x > 0.12;
   const jump = keys['arrowup'] || keys['w'] || keys[' '] || touchState.jump;
   const talkBtn = keys['t'];
   const takeBtn = keys['e'];
   const giveBtn = keys['g'];
 
-  p.vx = ((left ? -1 : 0) + (right ? 1 : 0)) * 3.15;
+  const analogX = Math.abs(joystickState.x) > 0.12 ? joystickState.x : 0;
+  const digitalX = ((left ? -1 : 0) + (right ? 1 : 0));
+  const moveX = analogX !== 0 ? analogX : digitalX;
+  p.vx = moveX * 3.9;
 
   let onEscalator = false;
   let jumpedFromEscalator = false;
@@ -671,6 +678,52 @@ function drawHints() {
   ctx.fillText(hints.join('   •   '), 32, 50);
 }
 
+function wrapCanvasText(text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  let line = '';
+  let yy = y;
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      ctx.fillText(line, x, yy);
+      line = word;
+      yy += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  if (line) ctx.fillText(line, x, yy);
+}
+
+function drawDialogueBox() {
+  if (!state.dialogue) return;
+  const x = 34, y = H - 188, w = W - 68, h = 154;
+  ctx.fillStyle = '#0e141b';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = '#86f1ff';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = '#ffd84d';
+  ctx.font = 'bold 18px monospace';
+  ctx.fillText(state.dialogue.speaker, x + 14, y + 24);
+  ctx.fillStyle = '#eef7ff';
+  ctx.font = '15px monospace';
+  wrapCanvasText(state.dialogue.text, x + 14, y + 48, w - 28, 18);
+
+  let oy = y + 78;
+  for (const option of state.dialogue.options || []) {
+    ctx.fillStyle = '#18344b';
+    ctx.fillRect(x + 12, oy, w - 24, 24);
+    ctx.strokeStyle = '#5ec7ff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 12, oy, w - 24, 24);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 13px monospace';
+    ctx.fillText(option.label, x + 20, oy + 16);
+    oy += 32;
+  }
+}
+
 function draw() {
   const sc = scene();
   const grad = ctx.createLinearGradient(0, 0, 0, H);
@@ -687,6 +740,7 @@ function draw() {
   sc.npcs.forEach(drawNpc);
   drawPlayer();
   drawHints();
+  drawDialogueBox();
 }
 
 function loop() {

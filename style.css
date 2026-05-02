@@ -143,6 +143,10 @@ button {
   display: none;
 }
 
+.dialogue-overlay {
+  display: none;
+}
+
 .dialogue-title {
   color: var(--yellow);
   font-weight: 700;
@@ -179,6 +183,7 @@ button {
   grid-template-columns: 1.1fr 1.5fr;
   gap: 14px;
   margin-top: 8px;
+  align-items: end;
 }
 .joystick-cluster, .action-cluster {
   background: rgba(16, 22, 30, 0.96);
@@ -195,12 +200,16 @@ button {
 .joystick-base {
   width: 160px;
   height: 160px;
-  margin: 0 auto;
+  margin: 0;
   border-radius: 50%;
   border: 3px solid #86f1ff;
   background: radial-gradient(circle at 35% 35%, #2e5778, #17324a 65%);
   position: relative;
   touch-action: none;
+}
+
+.joystick-cluster {
+  justify-self: start;
 }
 
 .joystick-knob {
@@ -216,9 +225,33 @@ button {
   box-shadow: 0 6px 16px rgba(0,0,0,0.35);
 }
 .action-cluster {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
+  justify-self: end;
+  width: 100%;
+}
+
+.action-row {
+  display: flex;
+  gap: 10px;
+}
+
+.action-row-primary {
+  justify-content: flex-end;
+}
+
+.action-row-primary .touch-btn {
+  width: 180px;
+}
+
+.action-row-secondary {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.action-row-secondary .touch-btn {
+  width: 120px;
 }
 .touch-btn {
   margin: 0;
@@ -245,4 +278,9 @@ button {
 
 @media (max-width: 860px) {
   .touch-controls { grid-template-columns: 1fr; }
+  .joystick-cluster,
+  .action-cluster { justify-self: stretch; }
+  .joystick-base { margin: 0 auto; }
+  .action-row-primary,
+  .action-row-secondary { justify-content: center; }
 }
