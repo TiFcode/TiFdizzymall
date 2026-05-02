@@ -535,8 +535,9 @@ function update() {
   for (const esc of scene().escalators) {
     const probe = lineDistance(p.x + p.w / 2, p.y + p.h, esc.x1, esc.y1, esc.x2, esc.y2);
     const withinX = p.x + p.w / 2 > Math.min(esc.x1, esc.x2) - 10 && p.x + p.w / 2 < Math.max(esc.x1, esc.x2) + 10;
-    const descendingOntoEscalator = p.vy >= 0 && feetPrevBeforeMove < probe.y - 6;
-    if (probe.dist < 13 && withinX && descendingOntoEscalator) {
+    const wasAboveEscalator = feetPrevBeforeMove < probe.y - 6;
+    const canBoardEscalator = p.vy >= 0 && (!p.onGround || wasAboveEscalator);
+    if (probe.dist < 16 && withinX && (canBoardEscalator || onEscalator)) {
       onEscalator = true;
       p.onGround = true;
       p.vy = 0;
