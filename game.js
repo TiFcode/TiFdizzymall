@@ -24,6 +24,7 @@ const keys = {};
 const touchState = { left: false, right: false, jump: false, take: false, give: false, talk: false };
 const actionLatch = { take: false, give: false, talk: false };
 const joystickState = { active: false, x: 0, y: 0, pointerId: null };
+const dialogueControlLatch = { up: false, down: false, select: false };
 
 window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
@@ -35,6 +36,10 @@ for (const btn of document.querySelectorAll('[data-touch]')) {
     e.preventDefault();
     if (isDirectional) {
       touchState[action] = true;
+    } else if (action === 'dialogue-up') {
+      moveDialogueSelection(-1);
+    } else if (action === 'dialogue-down') {
+      moveDialogueSelection(1);
     } else {
       triggerAction(action);
     }
@@ -263,7 +268,7 @@ function init() {
 
 function setMessage(text) { state.actionText = text; messageEl.textContent = text; }
 function setDialogue(speaker, text, options = []) {
-  state.dialogue = { speaker, text, options };
+  state.dialogue = { speaker, text, options, selectedIndex: 0 };
   setMessage(`${speaker}: ${text}`);
 }
 function closeDialogue() {
@@ -371,12 +376,29 @@ function handleDialogueOptionTap(x, y) {
   let oy = boxY + 78;
   for (let i = 0; i < options.length; i++) {
     if (y >= oy && y <= oy + 24) {
+      state.dialogue.selectedIndex = i;
       options[i].action();
       updatePanels();
       return true;
     }
     oy += 32;
   }
+  return true;
+}
+
+function moveDialogueSelection(delta) {
+  if (!state.dialogue || !(state.dialogue.options || []).length) return;
+  const len = state.dialogue.options.length;
+  state.dialogue.selectedIndex = (state.dialogue.selectedIndex + delta + len) % len;
+}
+
+function activateDialogueSelection() {
+  if (!state.dialogue || !(state.dialogue.options || []).length) return false;
+  const index = state.dialogue.selectedIndex || 0;
+  const option = state.dialogue.options[index];
+  if (!option) return false;
+  option.action();
+  updatePanels();
   return true;
 }
 
@@ -451,12 +473,44 @@ function moveScene(direction) {
 
 function update() {
   const p = state.player;
+  const dialogueActive = !!state.dialogue;
   const left = keys['arrowleft'] || keys['a'] || joystickState.x < -0.12;
   const right = keys['arrowright'] || keys['d'] || joystickState.x > 0.12;
   const jump = keys['arrowup'] || keys['w'] || keys[' '] || touchState.jump;
   const talkBtn = keys['t'];
   const takeBtn = keys['e'];
   const giveBtn = keys['g'];
+  const navUp = keys['arrowup'] || keys['w'] || joystickState.y < -0.45;
+  const navDown = keys['arrowdown'] || keys['s'] || joystickState.y > 0.45;
+  const selectBtn = keys[' '] || keys['enter'] || touchState.jump;
+
+  if (dialogueActive) {
+    p.vx = 0;
+    if (navUp && !dialogueControlLatch.up) {
+      dialogueControlLatch.up = true;
+      moveDialogueSelection(-1);
+    }
+    if (!navUp) dialogueControlLatch.up = false;
+
+    if (navDown && !dialogueControlLatch.down) {
+      dialogueControlLatch.down = true;
+      moveDialogueSelection(1);
+    }
+    if (!navDown) dialogueControlLatch.down = false;
+
+    if (selectBtn && !dialogueControlLatch.select) {
+      dialogueControlLatch.select = true;
+      activateDialogueSelection();
+    }
+    if (!selectBtn) dialogueControlLatch.select = false;
+
+    updatePanels();
+    return;
+  }
+
+  dialogueControlLatch.up = false;
+  dialogueControlLatch.down = false;
+  dialogueControlLatch.select = false;
 
   const analogX = Math.abs(joystickState.x) > 0.12 ? joystickState.x : 0;
   const digitalX = ((left ? -1 : 0) + (right ? 1 : 0));
@@ -711,13 +765,15 @@ function drawDialogueBox() {
   wrapCanvasText(state.dialogue.text, x + 14, y + 48, w - 28, 18);
 
   let oy = y + 78;
-  for (const option of state.dialogue.options || []) {
-    ctx.fillStyle = '#18344b';
+  for (let i = 0; i < (state.dialogue.options || []).length; i++) {
+    const option = state.dialogue.options[i];
+    const selected = i === (state.dialogue.selectedIndex || 0);
+    ctx.fillStyle = selected ? '#2d5678' : '#18344b';
     ctx.fillRect(x + 12, oy, w - 24, 24);
-    ctx.strokeStyle = '#5ec7ff';
+    ctx.strokeStyle = selected ? '#ffd84d' : '#5ec7ff';
     ctx.lineWidth = 2;
     ctx.strokeRect(x + 12, oy, w - 24, 24);
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = selected ? '#fff7c2' : '#ffffff';
     ctx.font = 'bold 13px monospace';
     ctx.fillText(option.label, x + 20, oy + 16);
     oy += 32;

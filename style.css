@@ -14,6 +14,7 @@ body {
   font-family: "Trebuchet MS", Verdana, sans-serif;
   background: radial-gradient(circle at top, #122030, var(--bg) 60%);
   color: var(--text);
+  padding-top: env(safe-area-inset-top, 0);
 }
 
 .wrap {
@@ -179,13 +180,20 @@ button {
 }
 
 .touch-controls {
-  display: grid;
-  grid-template-columns: 1.1fr 1.5fr;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
   margin-top: 8px;
-  align-items: end;
+  align-items: stretch;
 }
-.joystick-cluster, .action-cluster {
+.controls-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 18px;
+}
+
+.joystick-cluster, .jump-cluster, .action-cluster {
   background: rgba(16, 22, 30, 0.96);
   border: 2px solid #35506b;
   padding: 12px;
@@ -209,7 +217,7 @@ button {
 }
 
 .joystick-cluster {
-  justify-self: start;
+  margin-right: auto;
 }
 
 .joystick-knob {
@@ -224,11 +232,22 @@ button {
   transform: translate(-50%, -50%);
   box-shadow: 0 6px 16px rgba(0,0,0,0.35);
 }
+.jump-cluster {
+  margin-left: auto;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 220px;
+}
+
+.jump-cluster .touch-btn {
+  width: 180px;
+}
+
 .action-cluster {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  justify-self: end;
   width: 100%;
 }
 
@@ -237,21 +256,19 @@ button {
   gap: 10px;
 }
 
-.action-row-primary {
-  justify-content: flex-end;
-}
-
-.action-row-primary .touch-btn {
-  width: 180px;
-}
-
+.action-row-dialogue,
 .action-row-secondary {
-  justify-content: flex-end;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  flex-wrap: nowrap;
 }
 
+.action-row-dialogue .touch-btn,
 .action-row-secondary .touch-btn {
-  width: 120px;
+  flex: 1 1 0;
+}
+
+.touch-btn-nav {
+  background: #374b6b;
 }
 .touch-btn {
   margin: 0;
@@ -277,10 +294,8 @@ button {
 }
 
 @media (max-width: 860px) {
-  .touch-controls { grid-template-columns: 1fr; }
-  .joystick-cluster,
-  .action-cluster { justify-self: stretch; }
+  .controls-top-row { align-items: stretch; }
   .joystick-base { margin: 0 auto; }
-  .action-row-primary,
-  .action-row-secondary { justify-content: center; }
+  .joystick-cluster,
+  .jump-cluster { margin: 0; min-width: 0; }
 }

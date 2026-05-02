@@ -37,20 +37,26 @@
         </div>
 
         <section class="touch-controls" aria-label="Touch controls">
-          <div class="joystick-cluster">
-            <div class="joystick-title">🕹️ Left Thumb</div>
-            <div id="joystickBase" class="joystick-base">
-              <div id="joystickKnob" class="joystick-knob"></div>
+          <div class="controls-top-row">
+            <div class="joystick-cluster">
+              <div class="joystick-title">🕹️ Left Thumb</div>
+              <div id="joystickBase" class="joystick-base">
+                <div id="joystickKnob" class="joystick-knob"></div>
+              </div>
+            </div>
+            <div class="jump-cluster">
+              <button class="touch-btn touch-btn-jump" data-touch="jump">🦘 JUMP</button>
             </div>
           </div>
           <div class="action-cluster">
-            <div class="action-row action-row-primary">
-              <button class="touch-btn touch-btn-jump" data-touch="jump">🦘 JUMP</button>
+            <div class="action-row action-row-dialogue">
+              <button class="touch-btn touch-btn-nav" data-touch="dialogue-up">⬆️ UP</button>
+              <button class="touch-btn touch-btn-nav" data-touch="dialogue-down">⬇️ DOWN</button>
             </div>
             <div class="action-row action-row-secondary">
-              <button class="touch-btn touch-btn-take" data-touch="take">🤏 TAKE</button>
-              <button class="touch-btn touch-btn-give" data-touch="give">🎁 GIVE</button>
               <button class="touch-btn touch-btn-talk" data-touch="talk">💬 TALK</button>
+              <button class="touch-btn touch-btn-give" data-touch="give">🎁 GIVE</button>
+              <button class="touch-btn touch-btn-take" data-touch="take">🤏 TAKE</button>
             </div>
           </div>
         </section>
