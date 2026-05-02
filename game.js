@@ -894,12 +894,19 @@ function drawNpc(npc) {
 
 function drawPlayer() {
   const p = state.player;
-  drawCharacterSprite(p.x + p.w / 2, p.y + p.h, {
-    body: '#ff355f',
-    clothes: '#ffffff',
-    shoes: '#2e7fd9',
-    outline: '#151515'
-  }, 3);
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.ellipse(p.x + p.w / 2, p.y + p.h / 2, 19, 23, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.fillRect(p.x + 11, p.y + 16, 4, 4);
+  ctx.fillRect(p.x + 21, p.y + 16, 4, 4);
+  ctx.fillRect(p.x + 15, p.y + 26, 8, 3);
+  ctx.fillStyle = '#ff3056';
+  ctx.fillRect(p.x - 6, p.y + 20, 10, 10);
+  ctx.fillRect(p.x + p.w - 4, p.y + 20, 10, 10);
+  ctx.fillRect(p.x + 5, p.y + p.h - 5, 10, 6);
+  ctx.fillRect(p.x + 22, p.y + p.h - 5, 10, 6);
 }
 
 function drawDecor(sc) {
