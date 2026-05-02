@@ -260,7 +260,7 @@ let state;
 function init() {
   state = {
     scene: 'atrium',
-    player: { x: 82, y: 500, w: 26, h: 34, vx: 0, vy: 0, onGround: false },
+    player: { x: 82, y: 488, w: 38, h: 50, vx: 0, vy: 0, onGround: false },
     inventory: [],
     actionText: 'The mall feels alive again. Explore and keep the platforming energy.',
     dialogue: null,
@@ -643,17 +643,20 @@ function drawGradientPanel(x, y, w, h, top, bottom, border = '#86f1ff') {
 }
 
 function drawEscalator(e) {
-  ctx.strokeStyle = '#9ceeff';
-  ctx.lineWidth = 18;
+  ctx.strokeStyle = '#d7f7ff';
+  ctx.lineWidth = 24;
   ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(e.x1, e.y1); ctx.lineTo(e.x2, e.y2); ctx.stroke();
+  ctx.strokeStyle = '#6eb9d8';
+  ctx.lineWidth = 12;
+  ctx.beginPath(); ctx.moveTo(e.x1, e.y1); ctx.lineTo(e.x2, e.y2); ctx.stroke();
   ctx.strokeStyle = '#28495d';
-  ctx.lineWidth = 2;
-  for (let i = 0; i <= 12; i++) {
-    const t = i / 12;
+  ctx.lineWidth = 3;
+  for (let i = 0; i <= 16; i++) {
+    const t = i / 16;
     const x = e.x1 + (e.x2 - e.x1) * t;
     const y = e.y1 + (e.y2 - e.y1) * t;
-    ctx.beginPath(); ctx.moveTo(x - 10, y + 8); ctx.lineTo(x + 10, y - 8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - 14, y + 11); ctx.lineTo(x + 14, y - 11); ctx.stroke();
   }
 }
 
@@ -668,18 +671,42 @@ function drawTree(t) {
   ctx.fillRect(t.x - 4, t.y, 40, 10);
 }
 
+function drawBigDitherRect(x, y, w, h, a = 0.12) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.fillStyle = `rgba(255,255,255,${a})`;
+  for (let yy = y; yy < y + h; yy += 6) {
+    for (let xx = ((yy - y) / 6) % 2 === 0 ? x : x + 3; xx < x + w; xx += 6) {
+      ctx.fillRect(xx, yy, 2, 2);
+    }
+  }
+  ctx.fillStyle = `rgba(0,0,0,${a * 0.9})`;
+  for (let yy = y + 3; yy < y + h; yy += 6) {
+    for (let xx = ((yy - y) / 6) % 2 === 0 ? x + 3 : x; xx < x + w; xx += 6) {
+      ctx.fillRect(xx, yy, 2, 2);
+    }
+  }
+  ctx.restore();
+}
+
 function drawShopFront(sc) {
   drawGradientPanel(180, 145, 600, 135, 'rgba(38,53,71,0.96)', 'rgba(13,19,26,0.98)', sc.type === 'shop' ? '#8cecff' : '#ffd95b');
+  drawBigDitherRect(180, 145, 600, 135, 0.1);
   ctx.strokeStyle = sc.type === 'shop' ? sc.platforms.length % 2 ? '#ff70df' : '#85ecff' : '#ffd95b';
   ctx.lineWidth = 4;
   ctx.strokeRect(180, 145, 600, 135);
   ctx.fillStyle = sc.type === 'shop' ? '#fff' : '#ffd95b';
   ctx.font = 'bold 38px monospace';
   ctx.fillText(sc.store || sc.sign, 260, 228);
+  ctx.fillStyle = 'rgba(255,255,255,0.16)';
+  ctx.fillRect(198, 160, 564, 18);
 
   for (let i = 0; i < 4; i++) {
     const x = 215 + i * 135;
     drawGradientPanel(x, 285, 92, 115, '#263444', '#131d28', '#d5f7ff');
+    drawBigDitherRect(x, 285, 92, 115, 0.08);
     ctx.strokeStyle = '#fff'; ctx.strokeRect(x, 285, 92, 115);
     ctx.fillStyle = ['#ff7398','#ffe06e','#7be5ff','#7dff97'][i % 4];
     ctx.fillRect(x + 18, 318, 56, 34);
@@ -697,6 +724,7 @@ function drawPlatform(plat) {
   ctx.fillRect(plat.x, plat.y + plat.h - 6, plat.w, 6);
   ctx.fillStyle = 'rgba(255,255,255,0.18)';
   for (let x = plat.x; x < plat.x + plat.w; x += 12) ctx.fillRect(x, plat.y + 3, 6, 1);
+  drawBigDitherRect(plat.x, plat.y, plat.w, plat.h - 6, 0.07);
 }
 
 function drawItem(item) {
@@ -711,31 +739,35 @@ function drawItem(item) {
 }
 
 function drawNpc(npc) {
+  const scale = 1.35;
+  const headR = 14 * scale;
+  const bodyW = 20 * scale;
+  const bodyH = 22 * scale;
   ctx.fillStyle = npc.color;
   ctx.beginPath();
-  ctx.arc(npc.x, npc.platformY - 18, 14, 0, Math.PI * 2); ctx.fill();
-  ctx.fillRect(npc.x - 10, npc.platformY - 2, 20, 22);
+  ctx.arc(npc.x, npc.platformY - 30, headR, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(npc.x - bodyW / 2, npc.platformY - 8, bodyW, bodyH);
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold 12px monospace';
-  ctx.fillText(npc.name, npc.x - 34, npc.platformY - 36);
-  if (npc.objective && !npc.objective.completed) drawStar(npc.x + 24, npc.platformY - 26, 10, '#ffe95b');
+  ctx.font = 'bold 13px monospace';
+  ctx.fillText(npc.name, npc.x - 44, npc.platformY - 56);
+  if (npc.objective && !npc.objective.completed) drawStar(npc.x + 32, npc.platformY - 40, 12, '#ffe95b');
 }
 
 function drawPlayer() {
   const p = state.player;
   ctx.fillStyle = 'white';
   ctx.beginPath();
-  ctx.ellipse(p.x + p.w / 2, p.y + p.h / 2, 13, 16, 0, 0, Math.PI * 2);
+  ctx.ellipse(p.x + p.w / 2, p.y + p.h / 2, 19, 23, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = '#111';
-  ctx.fillRect(p.x + 8, p.y + 11, 3, 3);
-  ctx.fillRect(p.x + 15, p.y + 11, 3, 3);
-  ctx.fillRect(p.x + 11, p.y + 18, 6, 2);
+  ctx.fillRect(p.x + 11, p.y + 16, 4, 4);
+  ctx.fillRect(p.x + 21, p.y + 16, 4, 4);
+  ctx.fillRect(p.x + 15, p.y + 26, 8, 3);
   ctx.fillStyle = '#ff3056';
-  ctx.fillRect(p.x - 5, p.y + 14, 7, 7);
-  ctx.fillRect(p.x + p.w - 2, p.y + 14, 7, 7);
-  ctx.fillRect(p.x + 3, p.y + p.h - 4, 8, 5);
-  ctx.fillRect(p.x + 15, p.y + p.h - 4, 8, 5);
+  ctx.fillRect(p.x - 6, p.y + 20, 10, 10);
+  ctx.fillRect(p.x + p.w - 4, p.y + 20, 10, 10);
+  ctx.fillRect(p.x + 5, p.y + p.h - 5, 10, 6);
+  ctx.fillRect(p.x + 22, p.y + p.h - 5, 10, 6);
 }
 
 function drawDecor(sc) {
@@ -772,12 +804,15 @@ function drawSceneTitle(sc) {
   ctx.fillStyle = '#fff';
   ctx.font = '15px monospace';
   ctx.fillText(sc.name.toUpperCase(), 410, 118);
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.fillRect(240, 92, 470, 6);
 }
 
 function drawHints() {
   const npc = nearestNpc();
   const item = nearestItem();
   drawGradientPanel(18, 18, 760, 52, 'rgba(26,40,56,0.92)', 'rgba(9,14,20,0.92)', '#7edfff');
+  drawBigDitherRect(18, 18, 760, 52, 0.08);
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 16px monospace';
   const hints = [];
@@ -810,6 +845,7 @@ function drawDialogueBox() {
   if (!state.dialogue) return;
   const x = 34, y = H - 188, w = W - 68, h = 154;
   drawGradientPanel(x, y, w, h, '#1b2836', '#0e141b', '#86f1ff');
+  drawBigDitherRect(x, y, w, h, 0.08);
   ctx.fillStyle = '#ffd84d';
   ctx.font = 'bold 18px monospace';
   ctx.fillText(state.dialogue.speaker, x + 14, y + 24);
