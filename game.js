@@ -16,13 +16,18 @@ const GRAVITY = 0.56;
 const keys = {};
 const touchState = { left: false, right: false, jump: false, take: false, give: false, talk: false };
 const actionLatch = { take: false, give: false, talk: false };
+const queuedActions = { talk: false, take: false, give: false, jump: false };
 
 window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
 for (const btn of document.querySelectorAll('[data-touch]')) {
   const action = btn.dataset.touch;
-  const on = (e) => { e.preventDefault(); touchState[action] = true; };
+  const on = (e) => {
+    e.preventDefault();
+    touchState[action] = true;
+    if (queuedActions[action] !== undefined) queuedActions[action] = true;
+  };
   const off = (e) => { e.preventDefault(); touchState[action] = false; };
   btn.addEventListener('touchstart', on, { passive: false });
   btn.addEventListener('touchend', off, { passive: false });
@@ -30,6 +35,10 @@ for (const btn of document.querySelectorAll('[data-touch]')) {
   btn.addEventListener('mousedown', on);
   btn.addEventListener('mouseup', off);
   btn.addEventListener('mouseleave', off);
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (queuedActions[action] !== undefined) queuedActions[action] = true;
+  });
 }
 
 const itemInfo = {
@@ -295,10 +304,10 @@ function update() {
   const p = state.player;
   const left = keys['arrowleft'] || keys['a'] || touchState.left;
   const right = keys['arrowright'] || keys['d'] || touchState.right;
-  const jump = keys['arrowup'] || keys['w'] || keys[' '] || touchState.jump;
-  const talkBtn = keys['t'] || touchState.talk;
-  const takeBtn = keys['e'] || touchState.take;
-  const giveBtn = keys['g'] || touchState.give;
+  const jump = keys['arrowup'] || keys['w'] || keys[' '] || touchState.jump || queuedActions.jump;
+  const talkBtn = keys['t'] || touchState.talk || queuedActions.talk;
+  const takeBtn = keys['e'] || touchState.take || queuedActions.take;
+  const giveBtn = keys['g'] || touchState.give || queuedActions.give;
 
   p.vx = ((left ? -1 : 0) + (right ? 1 : 0)) * 3.15;
 
@@ -354,6 +363,11 @@ function update() {
   if (justPressed('talk', !!talkBtn)) talk();
   if (justPressed('take', !!takeBtn)) take();
   if (justPressed('give', !!giveBtn)) give();
+
+  queuedActions.talk = false;
+  queuedActions.take = false;
+  queuedActions.give = false;
+  queuedActions.jump = false;
 }
 
 function drawStar(x, y, r, color) {
