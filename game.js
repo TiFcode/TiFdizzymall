@@ -693,6 +693,88 @@ function drawGradientPanel(x, y, w, h, top, bottom, border = '#86f1ff') {
   ctx.strokeRect(x, y, w, h);
 }
 
+function drawPixelCells(x, y, cell, rows, palette) {
+  for (let ry = 0; ry < rows.length; ry++) {
+    const row = rows[ry];
+    for (let rx = 0; rx < row.length; rx++) {
+      const code = row[rx];
+      if (!code || code === '.') continue;
+      ctx.fillStyle = palette[code] || code;
+      ctx.fillRect(x + rx * cell, y + ry * cell, cell, cell);
+    }
+  }
+}
+
+function drawWindowSprite(x, y, accent) {
+  drawPixelCells(x, y, 4, [
+    '..........',
+    '.bbbbbbbb.',
+    '.bwwwwwwb.',
+    '.bw' + 'aaaaaa' + 'wb.',
+    '.bw' + 'aaaaaa' + 'wb.',
+    '.bwwwwwwb.',
+    '.bssssssb.',
+    '.bbbbbbbb.',
+  ], { b: '#dff7ff', w: '#91d8ff', a: accent, s: '#f8f3c8' });
+}
+
+function drawItemSprite(item) {
+  const x = item.x - 18;
+  const y = item.y - 18;
+  const sprites = {
+    scarf: { rows: ['..rrr....','..rrrr...','.rrpppr..','rrpppppr.','.rrpppr..','..rrr....','...rr....','..rr.....'], palette: { r: '#ff506d', p: '#ffd2dc' } },
+    token: { rows: ['..yyyy...','.yoooooy.','yoYYYYoy.','yoYYYYoy.','.yoooooy.','..yyyy...'], palette: { y: '#ffe26f', o: '#c89622', Y: '#fff7c2' } },
+    teddy: { rows: ['.bb..bb..','bbbbbbbb.','bbttttbb.','.bttttb..','.bttttb..','..bttb...','.b....b..'], palette: { b: '#9a6a34', t: '#dcb07a' } },
+    apple: { rows: ['...gg....','..gggg...','.ggGGgg..','.gGGGGg..','.gGGGGg..','..gggg...','...bb....'], palette: { g: '#4edb6b', G: '#a8ff70', b: '#7a4b22' } },
+    brochure: { rows: ['.wwwww...','.wbbbw...','.wbfbw...','.wbbbw...','.wwwww...'], palette: { w: '#f3efd8', b: '#5c7ac8', f: '#86f1ff' } },
+    flower: { rows: ['...pp....','..pPPp...','.pPPPPp..','...gg....','..gggg...','...tt....'], palette: { p: '#ff76ce', P: '#ffd0f3', g: '#4ecf74', t: '#aa713d' } },
+    sandwich: { rows: ['.yyyyyy..','yccccccy.','yggggggy.','.yyyyyy..'], palette: { y: '#f1c46b', c: '#f4e5bb', g: '#62d77c' } },
+    batteries: { rows: ['.ssssss..','sbbwwbs.','sbbwwbs.','.ssssss..'], palette: { s: '#d5dceb', b: '#4f6fb4', w: '#f5fbff' } },
+    ribbon: { rows: ['.bb..bb..','..bbbb...','.bbYYbb..','..bbbb...','...bb....'], palette: { b: '#5b8fff', Y: '#cfe0ff' } },
+    postcard: { rows: ['.wwwwww..','.wyyyyw..','.wybbbw..','.wwwwww..'], palette: { w: '#f1e5c5', y: '#ffe27a', b: '#69b7ff' } },
+  };
+  const sprite = sprites[item.key];
+  if (!sprite) return;
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.fillRect(x - 2, y - 2, 40, 40);
+  drawPixelCells(x, y, 4, sprite.rows, sprite.palette);
+}
+
+function drawCharacterSprite(cx, groundY, colors, scale = 3) {
+  const rows = [
+    '....ww....',
+    '...wwww...',
+    '..wffffw..',
+    '..wfeefw..',
+    '..wffffw..',
+    '...wmmw...',
+    '..jjjjjj..',
+    '..jccccj..',
+    '.jjccccjj.',
+    '.jjccccjj.',
+    '..jccccj..',
+    '..jjjjjj..',
+    '..s.sss...',
+    '.ss.s.ss..',
+    '.bb....bb.',
+  ];
+  const x = Math.round(cx - (rows[0].length * scale) / 2);
+  const y = Math.round(groundY - rows.length * scale);
+  const palette = {
+    w: '#ffffff',
+    f: '#f7d7b4',
+    e: '#151515',
+    m: '#d65b7c',
+    j: colors.body,
+    c: colors.clothes,
+    s: colors.shoes,
+    b: colors.outline,
+  };
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.fillRect(x + 4, groundY + 2, 22, 4);
+  drawPixelCells(x, y, scale, rows, palette);
+}
+
 function drawEscalator(e) {
   ctx.strokeStyle = '#d7f7ff';
   ctx.lineWidth = 24;
@@ -712,14 +794,16 @@ function drawEscalator(e) {
 }
 
 function drawTree(t) {
-  ctx.fillStyle = '#66421f';
-  ctx.fillRect(t.x + 10, t.y - 28, 9, 28);
-  ctx.fillStyle = '#29bd53';
-  for (const [dx,dy,r] of [[14,-42,24],[0,-20,18],[28,-18,18]]) {
-    ctx.beginPath(); ctx.arc(t.x + dx, t.y + dy, r, 0, Math.PI * 2); ctx.fill();
-  }
-  ctx.fillStyle = '#c49d66';
-  ctx.fillRect(t.x - 4, t.y, 40, 10);
+  drawPixelCells(t.x - 8, t.y - 58, 4, [
+    '....gg....',
+    '...gGGg...',
+    '..gGGGGg..',
+    '.gGGGGGGg.',
+    '..gGGGGg..',
+    '....tt....',
+    '....tt....',
+    '..pppppp..'
+  ], { g: '#29bd53', G: '#7df58f', t: '#66421f', p: '#c49d66' });
 }
 
 function drawBigDitherRect(x, y, w, h, a = 0.18) {
@@ -773,9 +857,8 @@ function drawShopFront(sc) {
     drawGradientPanel(x, 285, 92, 115, '#263444', '#131d28', '#d5f7ff');
     drawBigDitherRect(x, 285, 92, 115, 0.08);
     ctx.strokeStyle = '#fff'; ctx.strokeRect(x, 285, 92, 115);
-    ctx.fillStyle = ['#ff7398','#ffe06e','#7be5ff','#7dff97'][i % 4];
-    ctx.fillRect(x + 18, 318, 56, 34);
-    ctx.fillStyle = '#fff'; ctx.fillRect(x + 22, 364, 48, 12);
+    drawWindowSprite(x + 24, 306, ['#ff7398','#ffe06e','#7be5ff','#7dff97'][i % 4]);
+    ctx.fillStyle = '#fff'; ctx.fillRect(x + 18, 364, 56, 14);
   }
 }
 
@@ -793,25 +876,16 @@ function drawPlatform(plat) {
 }
 
 function drawItem(item) {
-  const info = itemInfo[item.key];
-  ctx.fillStyle = info.color;
-  ctx.beginPath();
-  ctx.roundRect(item.x - 11, item.y - 11, 22, 22, 6);
-  ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.font = '12px monospace';
-  ctx.fillText(info.icon, item.x - 6, item.y + 6);
+  drawItemSprite(item);
 }
 
 function drawNpc(npc) {
-  const scale = 1.35;
-  const headR = 14 * scale;
-  const bodyW = 20 * scale;
-  const bodyH = 22 * scale;
-  ctx.fillStyle = npc.color;
-  ctx.beginPath();
-  ctx.arc(npc.x, npc.platformY - 30, headR, 0, Math.PI * 2); ctx.fill();
-  ctx.fillRect(npc.x - bodyW / 2, npc.platformY - 8, bodyW, bodyH);
+  drawCharacterSprite(npc.x, npc.platformY + 22, {
+    body: npc.color,
+    clothes: '#f7f1da',
+    shoes: '#56361e',
+    outline: '#101418'
+  }, 3);
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 13px monospace';
   ctx.fillText(npc.name, npc.x - 44, npc.platformY - 56);
@@ -820,40 +894,64 @@ function drawNpc(npc) {
 
 function drawPlayer() {
   const p = state.player;
-  ctx.fillStyle = 'white';
-  ctx.beginPath();
-  ctx.ellipse(p.x + p.w / 2, p.y + p.h / 2, 19, 23, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#111';
-  ctx.fillRect(p.x + 11, p.y + 16, 4, 4);
-  ctx.fillRect(p.x + 21, p.y + 16, 4, 4);
-  ctx.fillRect(p.x + 15, p.y + 26, 8, 3);
-  ctx.fillStyle = '#ff3056';
-  ctx.fillRect(p.x - 6, p.y + 20, 10, 10);
-  ctx.fillRect(p.x + p.w - 4, p.y + 20, 10, 10);
-  ctx.fillRect(p.x + 5, p.y + p.h - 5, 10, 6);
-  ctx.fillRect(p.x + 22, p.y + p.h - 5, 10, 6);
+  drawCharacterSprite(p.x + p.w / 2, p.y + p.h, {
+    body: '#ff355f',
+    clothes: '#ffffff',
+    shoes: '#2e7fd9',
+    outline: '#151515'
+  }, 3);
 }
 
 function drawDecor(sc) {
   for (const d of sc.decorations || []) {
     if (d.type === 'directory') {
-      ctx.fillStyle = '#f7efc8'; ctx.fillRect(d.x, d.y, 78, 52); ctx.strokeStyle = '#222'; ctx.strokeRect(d.x, d.y, 78, 52);
-      ctx.fillStyle = '#222'; ctx.font = 'bold 10px monospace'; ctx.fillText('DIRECTORY', d.x + 6, d.y + 18); ctx.font = '9px monospace'; ctx.fillText('YOU ARE HERE', d.x + 7, d.y + 34);
+      drawPixelCells(d.x, d.y, 4, [
+        'yyyyyyyyyyyyyyyyyyyy',
+        'ybbbbbbbbbbbbbbbbby',
+        'ybwwwwwwwwwwwwwwwby',
+        'ybwrrrwwwyywwrrrwby',
+        'ybwwwwwwwwwwwwwwwby',
+        'ybbbbbbbbbbbbbbbbby',
+        'yyyyyyyyyyyyyyyyyyyy'
+      ], { y: '#f7efc8', b: '#222222', w: '#f5fbff', r: '#ff5f88' });
     }
     if (d.type === 'fountain') {
-      ctx.fillStyle = '#9eefff'; ctx.beginPath(); ctx.ellipse(d.x, d.y + 24, 70, 18, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#dffcff'; ctx.fillRect(d.x - 10, d.y - 8, 20, 38); ctx.fillRect(d.x - 34, d.y + 18, 68, 10);
-      for (let i = 0; i < 5; i++) { ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.moveTo(d.x, d.y + 18); ctx.lineTo(d.x - 22 + i * 11, d.y - 20 - (i % 2) * 10); ctx.stroke(); }
+      drawPixelCells(d.x - 44, d.y - 28, 4, [
+        '......wwww......',
+        '.....wWWWWw.....',
+        '......wwww......',
+        '....ssssssss....',
+        '..ssSSSSSSSSss..',
+        '...ssssssssss...',
+      ], { w: '#dffcff', W: '#ffffff', s: '#9eefff', S: '#65d9ff' });
     }
     if (d.type === 'bench') {
-      ctx.fillStyle = '#8c6134'; ctx.fillRect(d.x, d.y, 84, 10); ctx.fillRect(d.x + 8, d.y - 18, 10, 28); ctx.fillRect(d.x + 64, d.y - 18, 10, 28);
+      drawPixelCells(d.x, d.y - 24, 4, [
+        'bbbbbbbbbbbbbbbbbbbbb',
+        'bbhhhhhhhhhhhhhhhhhbb',
+        '...h............h....',
+        '...h............h....'
+      ], { b: '#55331d', h: '#8c6134' });
     }
     if (d.type === 'crates') {
-      for (let i = 0; i < 3; i++) { const x = d.x + i * 34; ctx.fillStyle = '#7d5a31'; ctx.fillRect(x, d.y - (i % 2) * 18, 30, 30); ctx.strokeStyle = '#caa06a'; ctx.strokeRect(x, d.y - (i % 2) * 18, 30, 30); }
+      for (let i = 0; i < 3; i++) {
+        const x = d.x + i * 34;
+        drawPixelCells(x, d.y - (i % 2) * 18, 3, [
+          'oooooooooo',
+          'oxxxxxxxxo',
+          'oxooooooxo',
+          'oxooooooxo',
+          'oxxxxxxxxo',
+          'oooooooooo'
+        ], { o: '#caa06a', x: '#7d5a31' });
+      }
     }
     if (d.type === 'bridgeRails') {
-      ctx.strokeStyle = '#b9d2ff'; ctx.lineWidth = 4; ctx.strokeRect(d.x - 200, d.y, 400, 30);
+      drawPixelCells(d.x - 200, d.y, 4, [
+        'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        'b................................................b',
+        'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+      ], { b: '#b9d2ff' });
     }
   }
 }
