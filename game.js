@@ -144,6 +144,7 @@ const scenes = {
       { x1: 255, y1: 392, x2: 468, y2: 220, dir: 1 }
     ],
     exits: [{ side: 'left', to: 'foodcourt' }, { side: 'right', to: 'directory' }],
+    upperExits: [{ side: 'left', to: 'roofgarden', yMin: 330 }, { side: 'right', to: 'toybridge', yMin: 330 }],
     items: [{ id: 'brochure_atrium', key: 'brochure', x: 454, y: 531, taken: false }],
     trees: [{ x: 100, y: 550 }, { x: 832, y: 550 }],
     npcs: [
@@ -157,6 +158,7 @@ const scenes = {
     platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 100, y: 410, w: 220, h: 18 }, { x: 640, y: 410, w: 200, h: 18 }],
     escalators: [{ x1: 325, y1: 565, x2: 525, y2: 410, dir: 1 }],
     exits: [{ side: 'left', to: 'roofgarden' }, { side: 'right', to: 'games' }],
+    upperExits: [{ side: 'right', to: 'games', yMin: 360 }],
     items: [{ id: 'scarf_shop', key: 'scarf', x: 293, y: 531, taken: false }, { id: 'ribbon_shop', key: 'ribbon', x: 712, y: 376, taken: false }],
     trees: [{ x: 860, y: 550 }],
     npcs: [{ id: 'tailor', name: 'Tailor Bibi', x: 615, y: 530, platformY: 565, color: '#ffc55f', leisure: ['Clothes should feel like a secret confidence boost.', 'A scarf improves almost any quest line.'], objective: { need: 'flower', doneText: 'Perfect. A flower for the counter. The whole shop feels brighter.', reward: 'batteries', rewardText: 'Here, take these toy batteries.' } }],
@@ -167,6 +169,7 @@ const scenes = {
     platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 120, y: 402, w: 250, h: 18 }, { x: 610, y: 402, w: 230, h: 18 }],
     escalators: [{ x1: 620, y1: 565, x2: 418, y2: 402, dir: -1 }],
     exits: [{ side: 'left', to: 'dizzywear' }, { side: 'right', to: 'kiddies' }],
+    upperExits: [{ side: 'left', to: 'dizzywear', yMin: 352 }, { side: 'right', to: 'kiddies', yMin: 352 }],
     items: [{ id: 'token_arcade', key: 'token', x: 248, y: 368, taken: false }],
     trees: [],
     npcs: [{ id: 'arcadekid', name: 'Vex', x: 695, y: 530, platformY: 565, color: '#79ffd9', leisure: ['That cabinet eats tokens like a tiny metallic dragon.', 'I trust blinking lights more than I trust silence.'], objective: { need: 'token', doneText: 'YES. The exact token. My glorious rematch awaits.', reward: 'sandwich', rewardText: 'Take my victory sandwich. I am too excited to chew.' } }],
@@ -177,6 +180,7 @@ const scenes = {
     platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 130, y: 410, w: 230, h: 18 }, { x: 620, y: 410, w: 220, h: 18 }],
     escalators: [{ x1: 330, y1: 565, x2: 525, y2: 410, dir: 1 }],
     exits: [{ side: 'left', to: 'games' }, { side: 'right', to: 'foodcourt' }],
+    upperExits: [{ side: 'left', to: 'games', yMin: 352 }, { side: 'right', to: 'foodcourt', yMin: 352 }],
     items: [{ id: 'teddy_corner', key: 'teddy', x: 251, y: 376, taken: false }],
     trees: [{ x: 838, y: 550 }],
     npcs: [{ id: 'nanny', name: 'Nanny Flo', x: 690, y: 530, platformY: 565, color: '#ffd9b0', leisure: ['The toy shelves are arranged by chaos, glitter, and courage.', 'If a teddy looks at you too knowingly, put it back slowly.'], objective: { need: 'batteries', doneText: 'Fresh batteries! The little rocket may sing again.', reward: 'apple', rewardText: 'Have this green apple before the toddlers bargain for it.' } }],
@@ -187,6 +191,7 @@ const scenes = {
     platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 100, y: 405, w: 245, h: 18 }, { x: 650, y: 405, w: 190, h: 18 }],
     escalators: [{ x1: 620, y1: 565, x2: 425, y2: 405, dir: -1 }],
     exits: [{ side: 'left', to: 'kiddies' }, { side: 'right', to: 'atrium' }],
+    upperExits: [{ side: 'left', to: 'kiddies', yMin: 352 }, { side: 'right', to: 'atrium', yMin: 352 }],
     items: [{ id: 'flower_food', key: 'flower', x: 746, y: 371, taken: false }],
     trees: [{ x: 96, y: 550 }],
     npcs: [{ id: 'chef', name: 'Chef Nori', x: 425, y: 530, platformY: 565, color: '#ff966a', leisure: ['A food court is basically a carnival with trays.', 'The fries are gossiping again. I can hear the sizzling.'], objective: { need: 'apple', doneText: 'A crisp apple! Just what my balancing lunch needed.', reward: 'sandwich', rewardText: 'I made you a proper cheese sandwich in return.' } }],
@@ -197,6 +202,7 @@ const scenes = {
     platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 120, y: 396, w: 250, h: 18 }, { x: 610, y: 396, w: 220, h: 18 }],
     escalators: [{ x1: 318, y1: 565, x2: 520, y2: 396, dir: 1 }],
     exits: [{ side: 'left', to: 'atrium' }, { side: 'right', to: 'fountain' }],
+    upperExits: [{ side: 'left', to: 'atrium', yMin: 344 }, { side: 'right', to: 'fountain', yMin: 344 }],
     items: [],
     trees: [],
     npcs: [{ id: 'clerk', name: 'Directory Dot', x: 520, y: 361, platformY: 396, color: '#ffe37e', leisure: ['Maps are just stories for people who enjoy corners.', 'I like giving directions in a mysterious tone. It raises morale.'], objective: { need: 'postcard', doneText: 'Wonderful. Proof that the fountain still sparkles.', reward: 'flower', rewardText: 'Take this rescued potted flower.' } }],
@@ -207,6 +213,7 @@ const scenes = {
     platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 110, y: 396, w: 230, h: 18 }, { x: 640, y: 396, w: 180, h: 18 }],
     escalators: [{ x1: 630, y1: 565, x2: 430, y2: 396, dir: -1 }],
     exits: [{ side: 'left', to: 'directory' }, { side: 'right', to: 'roofgarden' }],
+    upperExits: [{ side: 'left', to: 'directory', yMin: 344 }, { side: 'right', to: 'roofgarden', yMin: 344 }],
     items: [{ id: 'postcard_fountain', key: 'postcard', x: 246, y: 362, taken: false }],
     trees: [{ x: 120, y: 550 }, { x: 810, y: 550 }],
     npcs: [{ id: 'poet', name: 'Poet Rumi', x: 715, y: 530, platformY: 565, color: '#d0b2ff', leisure: ['Fountains are poetry with plumbing.', 'I have never met a coin that did not long for drama.'] }],
@@ -217,6 +224,7 @@ const scenes = {
     platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 115, y: 410, w: 245, h: 18 }, { x: 610, y: 410, w: 210, h: 18 }],
     escalators: [{ x1: 318, y1: 565, x2: 520, y2: 410, dir: 1 }],
     exits: [{ side: 'left', to: 'fountain' }, { side: 'right', to: 'dizzywear' }],
+    upperExits: [{ side: 'left', to: 'atrium', yMin: 360 }, { side: 'right', to: 'dizzywear', yMin: 360 }],
     items: [{ id: 'apple_roof', key: 'apple', x: 705, y: 376, taken: false }],
     trees: [{ x: 180, y: 548 }, { x: 470, y: 548 }, { x: 770, y: 548 }],
     npcs: [{ id: 'gardener', name: 'Gardener Lio', x: 270, y: 376, platformY: 410, color: '#88ffa2', leisure: ['Trees indoors become theatrical. They know they have an audience.', 'I trim shrubs into shapes only birds appreciate.'] }],
@@ -227,6 +235,7 @@ const scenes = {
     platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 120, y: 392, w: 260, h: 18 }, { x: 585, y: 392, w: 240, h: 18 }],
     escalators: [{ x1: 625, y1: 565, x2: 425, y2: 392, dir: -1 }],
     exits: [{ side: 'left', to: 'backhall' }, { side: 'right', to: 'fountain' }],
+    upperExits: [{ side: 'left', to: 'atrium', yMin: 344 }, { side: 'right', to: 'fountain', yMin: 344 }],
     items: [],
     trees: [],
     npcs: [{ id: 'builder', name: 'Tomo', x: 515, y: 530, platformY: 565, color: '#91d7ff', leisure: ['This bridge looks serious, but secretly it enjoys applause.', 'I build small worlds from rails and optimism.'], objective: { need: 'ribbon', doneText: 'A ribbon! Perfect for the tiny parade flag.', reward: 'teddy', rewardText: 'I found this tiny teddy under a crate. It deserves a new home.' } }],
@@ -237,6 +246,7 @@ const scenes = {
     platforms: [{ x: 36, y: 565, w: 888, h: 28 }, { x: 120, y: 402, w: 210, h: 18 }, { x: 635, y: 402, w: 210, h: 18 }],
     escalators: [{ x1: 318, y1: 565, x2: 520, y2: 402, dir: 1 }],
     exits: [{ side: 'left', to: 'toybridge' }, { side: 'right', to: 'atrium' }],
+    upperExits: [{ side: 'left', to: 'toybridge', yMin: 352 }, { side: 'right', to: 'atrium', yMin: 352 }],
     items: [],
     trees: [{ x: 820, y: 550 }],
     npcs: [{ id: 'porter', name: 'Porter Jax', x: 270, y: 530, platformY: 565, color: '#ffbc84', leisure: ['Behind every shiny mall is a hallway doing all the real work.', 'Crates never interrupt. That is why I trust them.'], objective: { need: 'sandwich', doneText: 'You legend. A sandwich for the long haul.', reward: 'scarf', rewardText: 'Take this red scarf from the lost-and-found trolley.' } }],
@@ -459,16 +469,18 @@ function triggerAction(action) {
 }
 
 function moveScene(direction) {
-  const exit = scene().exits.find(e => e.side === direction);
+  const p = state.player;
+  const elevated = (scene().upperExits || []).find(e => e.side === direction && p.y <= e.yMin);
+  const exit = elevated || scene().exits.find(e => e.side === direction);
   if (!exit) return;
   state.scene = exit.to;
-  const p = state.player;
   p.x = direction === 'left' ? W - 64 : 38;
-  p.y = 490;
+  p.y = elevated ? 330 : 490;
   p.vy = 0;
   p.vx = 0;
+  p.onGround = false;
   updatePanels();
-  setMessage(`You arrive in ${scene().name}.`);
+  setMessage(`You arrive in ${scene().name}${elevated ? ' on the upper level' : ''}.`);
 }
 
 function update() {
@@ -519,9 +531,12 @@ function update() {
 
   let onEscalator = false;
   let jumpedFromEscalator = false;
+  const feetPrevBeforeMove = p.y + p.h;
   for (const esc of scene().escalators) {
     const probe = lineDistance(p.x + p.w / 2, p.y + p.h, esc.x1, esc.y1, esc.x2, esc.y2);
-    if (probe.dist < 13 && p.x + p.w / 2 > Math.min(esc.x1, esc.x2) - 10 && p.x + p.w / 2 < Math.max(esc.x1, esc.x2) + 10) {
+    const withinX = p.x + p.w / 2 > Math.min(esc.x1, esc.x2) - 10 && p.x + p.w / 2 < Math.max(esc.x1, esc.x2) + 10;
+    const descendingOntoEscalator = p.vy >= 0 && feetPrevBeforeMove < probe.y - 6;
+    if (probe.dist < 13 && withinX && descendingOntoEscalator) {
       onEscalator = true;
       p.onGround = true;
       p.vy = 0;
