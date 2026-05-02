@@ -129,6 +129,53 @@ const itemInfo = {
   postcard: { label: 'Fountain Postcard', color: '#f4debb', icon: '💌' }
 };
 
+const dialogueFlavour = {
+  greeter: {
+    gossip: 'The mall doors gossip before anyone else does. They told me today would be lively.',
+    place: 'This atrium is the mall pretending to be a palace. I respect the ambition.'
+  },
+  mina: {
+    gossip: 'People pretend to shop, but really they come here to overhear destiny.',
+    place: 'The upper walkways make every conversation feel more dramatic. Good architecture understands theatre.'
+  },
+  tailor: {
+    gossip: 'Hemlines rise and fall, but panic before a fitting room mirror is eternal.',
+    place: 'A proper clothing shop should feel like a stage with prices attached.'
+  },
+  vex: {
+    gossip: 'Arcade gossip is mostly high scores, broken promises, and someone blaming the controls.',
+    place: 'This corner hums like it wants to become a tiny neon kingdom.'
+  },
+  nanny: {
+    gossip: 'Children spread rumours faster than adults, but with better sound effects.',
+    place: 'The kiddie zone is cheerful chaos with railings. That is good design.'
+  },
+  chef: {
+    gossip: 'Food court gossip arrives seasoned and usually slightly exaggerated.',
+    place: 'A food court is a cathedral for chips, trays, and difficult choices.'
+  },
+  directory: {
+    gossip: 'Everyone asks for directions, but half of them are really asking for reassurance.',
+    place: 'This directory zone exists to stop panic from becoming cardio.'
+  },
+  poet: {
+    gossip: 'Fountain gossip always sounds wiser because the water edits the pauses.',
+    place: 'This fountain corner is where echoes come to practice being philosophical.'
+  },
+  gardener: {
+    gossip: 'Plants keep gossip elegantly. They simply grow in the direction of scandal.',
+    place: 'The roof garden feels like the mall remembering it once admired the sky.'
+  },
+  builder: {
+    gossip: 'Bridge gossip is all structure, no fluff. Very efficient.',
+    place: 'Toy Bridge is held together by bolts, optimism, and a suspicious amount of colour.'
+  },
+  porter: {
+    gossip: 'Back hall gossip travels by trolley and always knows who skipped the heavy lifting.',
+    place: 'The service hall is the part of the mall that actually keeps the show alive.'
+  }
+};
+
 const scenes = {
   atrium: {
     name: 'Atrium', type: 'mall', sign: 'DIZZY MALL', palette: ['#08111d', '#11314a'], floor: 565,
@@ -373,9 +420,13 @@ function getNpcDialogue(npc) {
 }
 
 function buildRootOptions(npc) {
+  const flavour = dialogueFlavour[npc.id] || {
+    gossip: 'Every corridor has gossip if you listen harder than the cleaning machines.',
+    place: 'This place is doing its best to look glamorous while surviving practical reality.'
+  };
   const opts = [
-    { label: 'Ask for gossip', action: () => setDialogue(npc.name, `${npc.name === 'Mina' ? 'People pretend to shop, but really they come here to overhear destiny.' : 'Every corridor has gossip if you listen harder than the cleaning machines.'}`, buildRootOptions(npc)) },
-    { label: 'Ask what this place is like', action: () => setDialogue(npc.name, npc.leisure[npc.leisureIndex++ % npc.leisure.length], buildRootOptions(npc)) },
+    { label: 'Ask for gossip', action: () => setDialogue(npc.name, flavour.gossip, buildRootOptions(npc)) },
+    { label: 'Ask what this place is like', action: () => setDialogue(npc.name, flavour.place, buildRootOptions(npc)) },
   ];
   if (npc.objective && !npc.objective.completed) {
     opts.unshift({ label: `Ask about needed item`, action: () => setDialogue(npc.name, `Bring me ${itemInfo[npc.objective.need].label}. I am not being dramatic; I genuinely need it.`, buildRootOptions(npc)) });
@@ -618,15 +669,15 @@ function drawStar(x, y, r, color) {
   ctx.restore();
 }
 
-function drawDitherOverlay(alpha = 0.06) {
+function drawDitherOverlay(alpha = 0.14) {
   ctx.save();
   ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-  for (let y = 0; y < H; y += 4) {
-    for (let x = (y / 4) % 2 === 0 ? 0 : 2; x < W; x += 4) ctx.fillRect(x, y, 1, 1);
+  for (let y = 0; y < H; y += 8) {
+    for (let x = (y / 8) % 2 === 0 ? 0 : 4; x < W; x += 8) ctx.fillRect(x, y, 3, 3);
   }
-  ctx.fillStyle = `rgba(0,0,0,${alpha * 0.85})`;
-  for (let y = 2; y < H; y += 4) {
-    for (let x = (y / 4) % 2 === 0 ? 2 : 0; x < W; x += 4) ctx.fillRect(x, y, 1, 1);
+  ctx.fillStyle = `rgba(0,0,0,${alpha * 0.95})`;
+  for (let y = 4; y < H; y += 8) {
+    for (let x = (y / 8) % 2 === 0 ? 4 : 0; x < W; x += 8) ctx.fillRect(x, y, 3, 3);
   }
   ctx.restore();
 }
@@ -671,24 +722,38 @@ function drawTree(t) {
   ctx.fillRect(t.x - 4, t.y, 40, 10);
 }
 
-function drawBigDitherRect(x, y, w, h, a = 0.12) {
+function drawBigDitherRect(x, y, w, h, a = 0.18) {
   ctx.save();
   ctx.beginPath();
   ctx.rect(x, y, w, h);
   ctx.clip();
   ctx.fillStyle = `rgba(255,255,255,${a})`;
-  for (let yy = y; yy < y + h; yy += 6) {
-    for (let xx = ((yy - y) / 6) % 2 === 0 ? x : x + 3; xx < x + w; xx += 6) {
-      ctx.fillRect(xx, yy, 2, 2);
+  for (let yy = y; yy < y + h; yy += 8) {
+    for (let xx = ((yy - y) / 8) % 2 === 0 ? x : x + 4; xx < x + w; xx += 8) {
+      ctx.fillRect(xx, yy, 3, 3);
     }
   }
   ctx.fillStyle = `rgba(0,0,0,${a * 0.9})`;
-  for (let yy = y + 3; yy < y + h; yy += 6) {
-    for (let xx = ((yy - y) / 6) % 2 === 0 ? x + 3 : x; xx < x + w; xx += 6) {
-      ctx.fillRect(xx, yy, 2, 2);
+  for (let yy = y + 4; yy < y + h; yy += 8) {
+    for (let xx = ((yy - y) / 8) % 2 === 0 ? x + 4 : x; xx < x + w; xx += 8) {
+      ctx.fillRect(xx, yy, 3, 3);
     }
   }
   ctx.restore();
+}
+
+function drawBackdropBands(sc) {
+  const bands = [
+    { y: 96, h: 54, color: 'rgba(255,255,255,0.10)' },
+    { y: 150, h: 72, color: 'rgba(255,255,255,0.06)' },
+    { y: 222, h: 94, color: 'rgba(0,0,0,0.10)' },
+    { y: 316, h: 126, color: 'rgba(255,255,255,0.04)' },
+  ];
+  for (const band of bands) {
+    ctx.fillStyle = band.color;
+    ctx.fillRect(0, band.y, W, band.h);
+    drawBigDitherRect(0, band.y, W, band.h, 0.13);
+  }
 }
 
 function drawShopFront(sc) {
@@ -870,7 +935,8 @@ function draw() {
   const grad = ctx.createLinearGradient(0, 0, 0, H);
   grad.addColorStop(0, sc.palette[0]); grad.addColorStop(1, sc.palette[1]);
   ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
-  drawDitherOverlay(0.05);
+  drawBackdropBands(sc);
+  drawDitherOverlay(0.12);
 
   drawSceneTitle(sc);
   drawShopFront(sc);
