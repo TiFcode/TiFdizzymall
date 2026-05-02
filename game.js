@@ -693,46 +693,6 @@ function drawGradientPanel(x, y, w, h, top, bottom, border = '#86f1ff') {
   ctx.strokeRect(x, y, w, h);
 }
 
-const ISO = {
-  cx: W / 2,
-  baseY: 590,
-  sx: 0.72,
-  sy: 0.34,
-};
-
-function isoPoint(x, y, lift = 0) {
-  return {
-    x: ISO.cx + (x - W / 2) * ISO.sx,
-    y: ISO.baseY - (scene().floor - y) - Math.abs(x - W / 2) * ISO.sy - lift,
-  };
-}
-
-function drawIsoDiamond(x, y, w, depth, topColor, leftColor, rightColor) {
-  const p1 = isoPoint(x, y);
-  const p2 = isoPoint(x + w, y);
-  const p3 = isoPoint(x + w, y + depth, depth * 0.2);
-  const p4 = isoPoint(x, y + depth, depth * 0.2);
-  ctx.fillStyle = topColor;
-  ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = leftColor;
-  ctx.beginPath(); ctx.moveTo(p4.x, p4.y); ctx.lineTo(p1.x, p1.y); ctx.lineTo(p1.x, p1.y + 18); ctx.lineTo(p4.x, p4.y + 18); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = rightColor;
-  ctx.beginPath(); ctx.moveTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y); ctx.lineTo(p3.x, p3.y + 18); ctx.lineTo(p2.x, p2.y + 18); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-  ctx.stroke();
-}
-
-function drawIsoWall(x, y, w, h, top, face) {
-  const a = isoPoint(x, y, h);
-  const b = isoPoint(x + w, y, h);
-  const c = isoPoint(x + w, y);
-  const d = isoPoint(x, y);
-  ctx.fillStyle = top;
-  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = face;
-  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(b.x, b.y + h * 0.7); ctx.lineTo(a.x, a.y + h * 0.7); ctx.closePath(); ctx.fill();
-}
-
 function drawPixelCells(x, y, cell, rows, palette) {
   for (let ry = 0; ry < rows.length; ry++) {
     const row = rows[ry];
@@ -816,27 +776,25 @@ function drawCharacterSprite(cx, groundY, colors, scale = 3) {
 }
 
 function drawEscalator(e) {
-  const a = isoPoint(e.x1, e.y1);
-  const b = isoPoint(e.x2, e.y2, 36);
   ctx.strokeStyle = '#d7f7ff';
-  ctx.lineWidth = 20;
+  ctx.lineWidth = 24;
   ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(e.x1, e.y1); ctx.lineTo(e.x2, e.y2); ctx.stroke();
   ctx.strokeStyle = '#6eb9d8';
-  ctx.lineWidth = 10;
-  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  ctx.lineWidth = 12;
+  ctx.beginPath(); ctx.moveTo(e.x1, e.y1); ctx.lineTo(e.x2, e.y2); ctx.stroke();
   ctx.strokeStyle = '#28495d';
   ctx.lineWidth = 3;
   for (let i = 0; i <= 16; i++) {
     const t = i / 16;
-    const p = isoPoint(e.x1 + (e.x2 - e.x1) * t, e.y1 + (e.y2 - e.y1) * t, 20 * t);
-    ctx.beginPath(); ctx.moveTo(p.x - 10, p.y + 8); ctx.lineTo(p.x + 10, p.y - 8); ctx.stroke();
+    const x = e.x1 + (e.x2 - e.x1) * t;
+    const y = e.y1 + (e.y2 - e.y1) * t;
+    ctx.beginPath(); ctx.moveTo(x - 14, y + 11); ctx.lineTo(x + 14, y - 11); ctx.stroke();
   }
 }
 
 function drawTree(t) {
-  const p = isoPoint(t.x, t.y);
-  drawPixelCells(p.x - 20, p.y - 58, 4, [
+  drawPixelCells(t.x - 8, t.y - 58, 4, [
     '....gg....',
     '...gGGg...',
     '..gGGGGg..',
@@ -883,32 +841,46 @@ function drawBackdropBands(sc) {
 }
 
 function drawShopFront(sc) {
-  drawIsoWall(170, 214, 620, 110, 'rgba(39,55,73,0.95)', 'rgba(17,24,34,0.98)');
-  const titleP = isoPoint(345, 214, 62);
+  drawGradientPanel(180, 145, 600, 135, 'rgba(38,53,71,0.96)', 'rgba(13,19,26,0.98)', sc.type === 'shop' ? '#8cecff' : '#ffd95b');
+  drawBigDitherRect(180, 145, 600, 135, 0.1);
+  ctx.strokeStyle = sc.type === 'shop' ? sc.platforms.length % 2 ? '#ff70df' : '#85ecff' : '#ffd95b';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(180, 145, 600, 135);
   ctx.fillStyle = sc.type === 'shop' ? '#fff' : '#ffd95b';
-  ctx.font = 'bold 32px monospace';
-  ctx.fillText(sc.store || sc.sign, titleP.x - 70, titleP.y + 6);
+  ctx.font = 'bold 38px monospace';
+  ctx.fillText(sc.store || sc.sign, 260, 228);
+  ctx.fillStyle = 'rgba(255,255,255,0.16)';
+  ctx.fillRect(198, 160, 564, 18);
 
   for (let i = 0; i < 4; i++) {
     const x = 215 + i * 135;
-    const p = isoPoint(x, 288, 26);
-    drawWindowSprite(p.x - 20, p.y - 10, ['#ff7398','#ffe06e','#7be5ff','#7dff97'][i % 4]);
+    drawGradientPanel(x, 285, 92, 115, '#263444', '#131d28', '#d5f7ff');
+    drawBigDitherRect(x, 285, 92, 115, 0.08);
+    ctx.strokeStyle = '#fff'; ctx.strokeRect(x, 285, 92, 115);
+    drawWindowSprite(x + 24, 306, ['#ff7398','#ffe06e','#7be5ff','#7dff97'][i % 4]);
+    ctx.fillStyle = '#fff'; ctx.fillRect(x + 18, 364, 56, 14);
   }
 }
 
 function drawPlatform(plat) {
-  drawIsoDiamond(plat.x, plat.y, plat.w, plat.h, '#ededed', '#9a9a9a', '#bdbdbd');
+  const g = ctx.createLinearGradient(plat.x, plat.y, plat.x, plat.y + plat.h);
+  g.addColorStop(0, '#f3f3f3');
+  g.addColorStop(1, '#bdbdbd');
+  ctx.fillStyle = g;
+  ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+  ctx.fillStyle = '#78d3da';
+  ctx.fillRect(plat.x, plat.y + plat.h - 6, plat.w, 6);
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  for (let x = plat.x; x < plat.x + plat.w; x += 12) ctx.fillRect(x, plat.y + 3, 6, 1);
+  drawBigDitherRect(plat.x, plat.y, plat.w, plat.h - 6, 0.07);
 }
 
 function drawItem(item) {
-  const p = isoPoint(item.x, item.y, 18);
-  const shifted = { ...item, x: p.x, y: p.y };
-  drawItemSprite(shifted);
+  drawItemSprite(item);
 }
 
 function drawNpc(npc) {
-  const p = isoPoint(npc.x, npc.platformY, 26);
-  drawCharacterSprite(p.x, p.y + 28, {
+  drawCharacterSprite(npc.x, npc.platformY + 22, {
     body: npc.color,
     clothes: '#f7f1da',
     shoes: '#56361e',
@@ -916,33 +888,31 @@ function drawNpc(npc) {
   }, 3);
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 13px monospace';
-  ctx.fillText(npc.name, p.x - 44, p.y - 56);
-  if (npc.objective && !npc.objective.completed) drawStar(p.x + 32, p.y - 40, 12, '#ffe95b');
+  ctx.fillText(npc.name, npc.x - 44, npc.platformY - 56);
+  if (npc.objective && !npc.objective.completed) drawStar(npc.x + 32, npc.platformY - 40, 12, '#ffe95b');
 }
 
 function drawPlayer() {
   const p = state.player;
-  const ip = isoPoint(p.x + p.w / 2, p.y + p.h / 2, 24);
   ctx.fillStyle = 'white';
   ctx.beginPath();
-  ctx.ellipse(ip.x, ip.y, 19, 23, 0, 0, Math.PI * 2);
+  ctx.ellipse(p.x + p.w / 2, p.y + p.h / 2, 19, 23, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = '#111';
-  ctx.fillRect(ip.x - 8, ip.y - 7, 4, 4);
-  ctx.fillRect(ip.x + 2, ip.y - 7, 4, 4);
-  ctx.fillRect(ip.x - 4, ip.y + 3, 8, 3);
+  ctx.fillRect(p.x + 11, p.y + 16, 4, 4);
+  ctx.fillRect(p.x + 21, p.y + 16, 4, 4);
+  ctx.fillRect(p.x + 15, p.y + 26, 8, 3);
   ctx.fillStyle = '#ff3056';
-  ctx.fillRect(ip.x - 25, ip.y - 3, 10, 10);
-  ctx.fillRect(ip.x + 15, ip.y - 3, 10, 10);
-  ctx.fillRect(ip.x - 14, ip.y + 22, 10, 6);
-  ctx.fillRect(ip.x + 4, ip.y + 22, 10, 6);
+  ctx.fillRect(p.x - 6, p.y + 20, 10, 10);
+  ctx.fillRect(p.x + p.w - 4, p.y + 20, 10, 10);
+  ctx.fillRect(p.x + 5, p.y + p.h - 5, 10, 6);
+  ctx.fillRect(p.x + 22, p.y + p.h - 5, 10, 6);
 }
 
 function drawDecor(sc) {
   for (const d of sc.decorations || []) {
     if (d.type === 'directory') {
-      const p = isoPoint(d.x, d.y, 18);
-      drawPixelCells(p.x, p.y, 4, [
+      drawPixelCells(d.x, d.y, 4, [
         'yyyyyyyyyyyyyyyyyyyy',
         'ybbbbbbbbbbbbbbbbby',
         'ybwwwwwwwwwwwwwwwby',
@@ -953,8 +923,7 @@ function drawDecor(sc) {
       ], { y: '#f7efc8', b: '#222222', w: '#f5fbff', r: '#ff5f88' });
     }
     if (d.type === 'fountain') {
-      const p = isoPoint(d.x, d.y, 16);
-      drawPixelCells(p.x - 44, p.y - 28, 4, [
+      drawPixelCells(d.x - 44, d.y - 28, 4, [
         '......wwww......',
         '.....wWWWWw.....',
         '......wwww......',
@@ -964,8 +933,7 @@ function drawDecor(sc) {
       ], { w: '#dffcff', W: '#ffffff', s: '#9eefff', S: '#65d9ff' });
     }
     if (d.type === 'bench') {
-      const p = isoPoint(d.x, d.y, 12);
-      drawPixelCells(p.x, p.y - 24, 4, [
+      drawPixelCells(d.x, d.y - 24, 4, [
         'bbbbbbbbbbbbbbbbbbbbb',
         'bbhhhhhhhhhhhhhhhhhbb',
         '...h............h....',
@@ -975,8 +943,7 @@ function drawDecor(sc) {
     if (d.type === 'crates') {
       for (let i = 0; i < 3; i++) {
         const x = d.x + i * 34;
-        const p = isoPoint(x, d.y - (i % 2) * 18, 10);
-        drawPixelCells(p.x, p.y, 3, [
+        drawPixelCells(x, d.y - (i % 2) * 18, 3, [
           'oooooooooo',
           'oxxxxxxxxo',
           'oxooooooxo',
@@ -987,8 +954,7 @@ function drawDecor(sc) {
       }
     }
     if (d.type === 'bridgeRails') {
-      const p = isoPoint(d.x - 200, d.y, 10);
-      drawPixelCells(p.x, p.y, 4, [
+      drawPixelCells(d.x - 200, d.y, 4, [
         'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
         'b................................................b',
         'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
