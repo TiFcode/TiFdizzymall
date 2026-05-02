@@ -21,6 +21,10 @@ document.getElementById('restart').addEventListener('click', init);
 const W = canvas.width;
 const H = canvas.height;
 const GRAVITY = 0.56;
+const ISO_ORIGIN_X = 480;
+const ISO_ORIGIN_Y = 170;
+const ISO_SCALE_X = 0.50;
+const ISO_SCALE_Y = 0.26;
 const keys = {};
 const touchState = { left: false, right: false, jump: false, take: false, give: false, talk: false };
 const actionLatch = { take: false, give: false, talk: false };
@@ -307,7 +311,7 @@ let state;
 function init() {
   state = {
     scene: 'atrium',
-    player: { x: 82, y: 488, w: 38, h: 50, vx: 0, vy: 0, onGround: false },
+    player: { x: 260, y: 430, w: 38, h: 50, vx: 0, vy: 0, onGround: true },
     inventory: [],
     actionText: 'The mall feels alive again. Explore and keep the platforming energy.',
     dialogue: null,
@@ -351,6 +355,12 @@ function addItem(key) { if (!hasItem(key)) state.inventory.push(key); }
 function removeItem(key) { state.inventory = state.inventory.filter(i => i !== key); }
 function scene() { return scenes[state.scene]; }
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function isoProject(wx, wy, lift = 0) {
+  return {
+    x: ISO_ORIGIN_X + (wx - wy) * ISO_SCALE_X,
+    y: ISO_ORIGIN_Y + (wx + wy) * ISO_SCALE_Y - lift,
+  };
+}
 
 function updatePanels() {
   screenNameEl.textContent = scene().name;
@@ -398,8 +408,8 @@ function nearestNpc() {
   const p = state.player;
   let best = null;
   for (const npc of scene().npcs) {
-    const d = Math.hypot((p.x + p.w / 2) - npc.x, (p.y + p.h) - npc.platformY);
-    if (d < 82 && (!best || d < best.d)) best = { npc, d };
+    const d = Math.hypot((p.x + p.w / 2) - npc.x, p.y - npc.platformY);
+    if (d < 92 && (!best || d < best.d)) best = { npc, d };
   }
   return best?.npc || null;
 }
@@ -482,8 +492,8 @@ function nearestItem() {
   let best = null;
   for (const item of scene().items) {
     if (item.taken) continue;
-    const d = Math.hypot((p.x + p.w / 2) - item.x, (p.y + p.h) - item.y);
-    if (d < 74 && (!best || d < best.d)) best = { item, d };
+    const d = Math.hypot((p.x + p.w / 2) - item.x, p.y - item.y);
+    if (d < 84 && (!best || d < best.d)) best = { item, d };
   }
   return best?.item || null;
 }
@@ -535,25 +545,23 @@ function triggerAction(action) {
 
 function moveScene(direction) {
   const p = state.player;
-  const elevated = (scene().upperExits || []).find(e => e.side === direction && p.y <= e.yMin);
-  const exit = elevated || scene().exits.find(e => e.side === direction);
+  const exit = scene().exits.find(e => e.side === direction) || (scene().upperExits || []).find(e => e.side === direction);
   if (!exit) return;
   state.scene = exit.to;
-  p.x = direction === 'left' ? W - 64 : 38;
-  p.y = elevated ? 330 : 490;
+  p.x = direction === 'left' ? 760 : 180;
+  p.y = 430;
   p.vy = 0;
   p.vx = 0;
-  p.onGround = false;
+  p.onGround = true;
   updatePanels();
-  setMessage(`You arrive in ${scene().name}${elevated ? ' on the upper level' : ''}.`);
+  setMessage(`You arrive in ${scene().name}.`);
 }
 
 function update() {
   const p = state.player;
   const dialogueActive = !!state.dialogue;
-  const left = keys['arrowleft'] || keys['a'] || joystickState.x < -0.12;
-  const right = keys['arrowright'] || keys['d'] || joystickState.x > 0.12;
-  const jump = keys['arrowup'] || keys['w'] || keys[' '] || touchState.jump;
+  const left = keys['arrowleft'] || keys['a'];
+  const right = keys['arrowright'] || keys['d'];
   const talkBtn = keys['t'];
   const takeBtn = keys['e'];
   const giveBtn = keys['g'];
@@ -563,6 +571,7 @@ function update() {
 
   if (dialogueActive) {
     p.vx = 0;
+    p.vy = 0;
     if (navUp && !dialogueControlLatch.up) {
       dialogueControlLatch.up = true;
       moveDialogueSelection(-1);
@@ -589,63 +598,28 @@ function update() {
   dialogueControlLatch.down = false;
   dialogueControlLatch.select = false;
 
-  const analogX = Math.abs(joystickState.x) > 0.12 ? joystickState.x : 0;
+  const analogX = Math.abs(joystickState.x) > 0.1 ? joystickState.x : 0;
+  const analogY = Math.abs(joystickState.y) > 0.1 ? joystickState.y : 0;
   const digitalX = ((left ? -1 : 0) + (right ? 1 : 0));
+  const digitalY = ((keys['arrowdown'] || keys['s'] ? 1 : 0) + (keys['arrowup'] || keys['w'] ? -1 : 0));
   const moveX = analogX !== 0 ? analogX : digitalX;
-  p.vx = moveX * 3.9;
+  const moveY = analogY !== 0 ? analogY : digitalY;
+  p.vx = moveX * 4.2;
+  p.vy = moveY * 4.2;
+  p.x = clamp(p.x + p.vx, 110, 860);
+  p.y = clamp(p.y + p.vy, 235, 560);
 
-  let onEscalator = false;
-  let jumpedFromEscalator = false;
-  const feetPrevBeforeMove = p.y + p.h;
   for (const esc of scene().escalators) {
-    const probe = lineDistance(p.x + p.w / 2, p.y + p.h, esc.x1, esc.y1, esc.x2, esc.y2);
-    const withinX = p.x + p.w / 2 > Math.min(esc.x1, esc.x2) - 10 && p.x + p.w / 2 < Math.max(esc.x1, esc.x2) + 10;
-    const wasAboveEscalator = feetPrevBeforeMove < probe.y - 6;
-    const canBoardEscalator = p.vy >= 0 && (!p.onGround || wasAboveEscalator);
-    if (probe.dist < 16 && withinX && (canBoardEscalator || onEscalator)) {
-      onEscalator = true;
-      p.onGround = true;
-      p.vy = 0;
-      p.y = probe.y - p.h;
-      if (jump) {
-        p.vy = -10.4;
-        p.onGround = false;
-        onEscalator = false;
-        jumpedFromEscalator = true;
-        break;
-      }
-      p.x += esc.dir * 0.9;
-      if (left) p.x -= 1.5;
-      if (right) p.x += 1.5;
-      break;
+    const midX = (esc.x1 + esc.x2) / 2;
+    const midY = (esc.y1 + esc.y2) / 2;
+    if (Math.hypot(p.x - midX, p.y - midY) < 42) {
+      p.x += esc.dir * 0.8;
+      p.y -= 1.1;
     }
   }
 
-  if (!onEscalator) {
-    if (jump && p.onGround && !jumpedFromEscalator) {
-      p.vy = -10.4;
-      p.onGround = false;
-    }
-    p.vy += GRAVITY;
-    p.y += p.vy;
-    p.onGround = false;
-
-    for (const plat of scene().platforms) {
-      const prevFeet = p.y + p.h - p.vy;
-      if (p.x + p.w > plat.x && p.x < plat.x + plat.w && prevFeet <= plat.y && p.y + p.h >= plat.y) {
-        p.y = plat.y - p.h;
-        p.vy = 0;
-        p.onGround = true;
-      }
-    }
-  }
-
-  p.x += p.vx;
-  if (p.y > H + 60) {
-    p.x = 70; p.y = 490; p.vx = 0; p.vy = 0;
-  }
-  if (p.x < -30) moveScene('left');
-  if (p.x > W + 30) moveScene('right');
+  if (p.x < 120) moveScene('left');
+  if (p.x > 850) moveScene('right');
 
   if (justPressed('talk', !!talkBtn)) talk();
   if (justPressed('take', !!takeBtn)) take();
@@ -667,6 +641,54 @@ function drawStar(x, y, r, color) {
   }
   ctx.stroke();
   ctx.restore();
+}
+
+function drawIsoFloor() {
+  const top = isoProject(180, 230);
+  const right = isoProject(830, 230);
+  const bottom = isoProject(830, 560);
+  const left = isoProject(180, 560);
+  ctx.fillStyle = '#5d5d6f';
+  ctx.beginPath();
+  ctx.moveTo(top.x, top.y);
+  ctx.lineTo(right.x, right.y);
+  ctx.lineTo(bottom.x, bottom.y);
+  ctx.lineTo(left.x, left.y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#d9e7ff';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  for (let gx = 220; gx <= 820; gx += 70) {
+    const a = isoProject(gx, 240);
+    const b = isoProject(gx, 550);
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  for (let gy = 260; gy <= 540; gy += 55) {
+    const a = isoProject(200, gy);
+    const b = isoProject(810, gy);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+}
+
+function drawIsoBackWalls(sc) {
+  const a = isoProject(180, 230, 0);
+  const b = isoProject(830, 230, 0);
+  ctx.fillStyle = 'rgba(18,25,35,0.95)';
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y - 150);
+  ctx.lineTo(b.x, b.y - 150);
+  ctx.lineTo(b.x, b.y);
+  ctx.lineTo(a.x, a.y);
+  ctx.closePath();
+  ctx.fill();
+  drawBigDitherRect(a.x, a.y - 150, b.x - a.x, 150, 0.10);
+  ctx.fillStyle = sc.type === 'shop' ? '#ffe889' : '#9bddff';
+  ctx.font = 'bold 28px monospace';
+  ctx.fillText(sc.store || sc.sign, a.x + 90, a.y - 68);
 }
 
 function drawDitherOverlay(alpha = 0.14) {
@@ -776,25 +798,27 @@ function drawCharacterSprite(cx, groundY, colors, scale = 3) {
 }
 
 function drawEscalator(e) {
+  const a = isoProject(e.x1, e.y1);
+  const b = isoProject(e.x2, e.y2, 34);
   ctx.strokeStyle = '#d7f7ff';
-  ctx.lineWidth = 24;
+  ctx.lineWidth = 18;
   ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(e.x1, e.y1); ctx.lineTo(e.x2, e.y2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
   ctx.strokeStyle = '#6eb9d8';
-  ctx.lineWidth = 12;
-  ctx.beginPath(); ctx.moveTo(e.x1, e.y1); ctx.lineTo(e.x2, e.y2); ctx.stroke();
+  ctx.lineWidth = 9;
+  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
   ctx.strokeStyle = '#28495d';
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2;
   for (let i = 0; i <= 16; i++) {
     const t = i / 16;
-    const x = e.x1 + (e.x2 - e.x1) * t;
-    const y = e.y1 + (e.y2 - e.y1) * t;
-    ctx.beginPath(); ctx.moveTo(x - 14, y + 11); ctx.lineTo(x + 14, y - 11); ctx.stroke();
+    const p = isoProject(e.x1 + (e.x2 - e.x1) * t, e.y1 + (e.y2 - e.y1) * t, 34 * t);
+    ctx.beginPath(); ctx.moveTo(p.x - 9, p.y + 7); ctx.lineTo(p.x + 9, p.y - 7); ctx.stroke();
   }
 }
 
 function drawTree(t) {
-  drawPixelCells(t.x - 8, t.y - 58, 4, [
+  const p = isoProject(t.x, t.y, 18);
+  drawPixelCells(p.x - 20, p.y - 58, 4, [
     '....gg....',
     '...gGGg...',
     '..gGGGGg..',
@@ -841,46 +865,29 @@ function drawBackdropBands(sc) {
 }
 
 function drawShopFront(sc) {
-  drawGradientPanel(180, 145, 600, 135, 'rgba(38,53,71,0.96)', 'rgba(13,19,26,0.98)', sc.type === 'shop' ? '#8cecff' : '#ffd95b');
-  drawBigDitherRect(180, 145, 600, 135, 0.1);
-  ctx.strokeStyle = sc.type === 'shop' ? sc.platforms.length % 2 ? '#ff70df' : '#85ecff' : '#ffd95b';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(180, 145, 600, 135);
-  ctx.fillStyle = sc.type === 'shop' ? '#fff' : '#ffd95b';
-  ctx.font = 'bold 38px monospace';
-  ctx.fillText(sc.store || sc.sign, 260, 228);
-  ctx.fillStyle = 'rgba(255,255,255,0.16)';
-  ctx.fillRect(198, 160, 564, 18);
-
   for (let i = 0; i < 4; i++) {
     const x = 215 + i * 135;
-    drawGradientPanel(x, 285, 92, 115, '#263444', '#131d28', '#d5f7ff');
-    drawBigDitherRect(x, 285, 92, 115, 0.08);
-    ctx.strokeStyle = '#fff'; ctx.strokeRect(x, 285, 92, 115);
-    drawWindowSprite(x + 24, 306, ['#ff7398','#ffe06e','#7be5ff','#7dff97'][i % 4]);
-    ctx.fillStyle = '#fff'; ctx.fillRect(x + 18, 364, 56, 14);
+    const p = isoProject(x, 245, 30);
+    drawWindowSprite(p.x - 18, p.y, ['#ff7398','#ffe06e','#7be5ff','#7dff97'][i % 4]);
   }
 }
 
 function drawPlatform(plat) {
-  const g = ctx.createLinearGradient(plat.x, plat.y, plat.x, plat.y + plat.h);
-  g.addColorStop(0, '#f3f3f3');
-  g.addColorStop(1, '#bdbdbd');
-  ctx.fillStyle = g;
-  ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
-  ctx.fillStyle = '#78d3da';
-  ctx.fillRect(plat.x, plat.y + plat.h - 6, plat.w, 6);
-  ctx.fillStyle = 'rgba(255,255,255,0.18)';
-  for (let x = plat.x; x < plat.x + plat.w; x += 12) ctx.fillRect(x, plat.y + 3, 6, 1);
-  drawBigDitherRect(plat.x, plat.y, plat.w, plat.h - 6, 0.07);
+  const a = isoProject(plat.x, plat.y);
+  const b = isoProject(plat.x + plat.w, plat.y);
+  ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
 }
 
 function drawItem(item) {
-  drawItemSprite(item);
+  const p = isoProject(item.x, item.y, 22);
+  drawItemSprite({ ...item, x: p.x, y: p.y });
 }
 
 function drawNpc(npc) {
-  drawCharacterSprite(npc.x, npc.platformY + 22, {
+  const p = isoProject(npc.x, npc.platformY, 28);
+  drawCharacterSprite(p.x, p.y + 22, {
     body: npc.color,
     clothes: '#f7f1da',
     shoes: '#56361e',
@@ -888,31 +895,33 @@ function drawNpc(npc) {
   }, 3);
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 13px monospace';
-  ctx.fillText(npc.name, npc.x - 44, npc.platformY - 56);
-  if (npc.objective && !npc.objective.completed) drawStar(npc.x + 32, npc.platformY - 40, 12, '#ffe95b');
+  ctx.fillText(npc.name, p.x - 44, p.y - 56);
+  if (npc.objective && !npc.objective.completed) drawStar(p.x + 32, p.y - 40, 12, '#ffe95b');
 }
 
 function drawPlayer() {
   const p = state.player;
+  const ip = isoProject(p.x + p.w / 2, p.y, 30);
   ctx.fillStyle = 'white';
   ctx.beginPath();
-  ctx.ellipse(p.x + p.w / 2, p.y + p.h / 2, 19, 23, 0, 0, Math.PI * 2);
+  ctx.ellipse(ip.x, ip.y, 17, 21, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = '#111';
-  ctx.fillRect(p.x + 11, p.y + 16, 4, 4);
-  ctx.fillRect(p.x + 21, p.y + 16, 4, 4);
-  ctx.fillRect(p.x + 15, p.y + 26, 8, 3);
+  ctx.fillRect(ip.x - 7, ip.y - 7, 4, 4);
+  ctx.fillRect(ip.x + 3, ip.y - 7, 4, 4);
+  ctx.fillRect(ip.x - 3, ip.y + 3, 8, 3);
   ctx.fillStyle = '#ff3056';
-  ctx.fillRect(p.x - 6, p.y + 20, 10, 10);
-  ctx.fillRect(p.x + p.w - 4, p.y + 20, 10, 10);
-  ctx.fillRect(p.x + 5, p.y + p.h - 5, 10, 6);
-  ctx.fillRect(p.x + 22, p.y + p.h - 5, 10, 6);
+  ctx.fillRect(ip.x - 23, ip.y - 2, 10, 10);
+  ctx.fillRect(ip.x + 13, ip.y - 2, 10, 10);
+  ctx.fillRect(ip.x - 14, ip.y + 19, 10, 6);
+  ctx.fillRect(ip.x + 4, ip.y + 19, 10, 6);
 }
 
 function drawDecor(sc) {
   for (const d of sc.decorations || []) {
     if (d.type === 'directory') {
-      drawPixelCells(d.x, d.y, 4, [
+      const p = isoProject(d.x, d.y, 20);
+      drawPixelCells(p.x, p.y, 4, [
         'yyyyyyyyyyyyyyyyyyyy',
         'ybbbbbbbbbbbbbbbbby',
         'ybwwwwwwwwwwwwwwwby',
@@ -923,7 +932,8 @@ function drawDecor(sc) {
       ], { y: '#f7efc8', b: '#222222', w: '#f5fbff', r: '#ff5f88' });
     }
     if (d.type === 'fountain') {
-      drawPixelCells(d.x - 44, d.y - 28, 4, [
+      const p = isoProject(d.x, d.y, 18);
+      drawPixelCells(p.x - 44, p.y - 28, 4, [
         '......wwww......',
         '.....wWWWWw.....',
         '......wwww......',
@@ -933,7 +943,8 @@ function drawDecor(sc) {
       ], { w: '#dffcff', W: '#ffffff', s: '#9eefff', S: '#65d9ff' });
     }
     if (d.type === 'bench') {
-      drawPixelCells(d.x, d.y - 24, 4, [
+      const p = isoProject(d.x, d.y, 14);
+      drawPixelCells(p.x, p.y - 24, 4, [
         'bbbbbbbbbbbbbbbbbbbbb',
         'bbhhhhhhhhhhhhhhhhhbb',
         '...h............h....',
@@ -943,7 +954,8 @@ function drawDecor(sc) {
     if (d.type === 'crates') {
       for (let i = 0; i < 3; i++) {
         const x = d.x + i * 34;
-        drawPixelCells(x, d.y - (i % 2) * 18, 3, [
+        const p = isoProject(x, d.y - (i % 2) * 18, 10);
+        drawPixelCells(p.x, p.y, 3, [
           'oooooooooo',
           'oxxxxxxxxo',
           'oxooooooxo',
@@ -954,7 +966,8 @@ function drawDecor(sc) {
       }
     }
     if (d.type === 'bridgeRails') {
-      drawPixelCells(d.x - 200, d.y, 4, [
+      const p = isoProject(d.x - 200, d.y, 10);
+      drawPixelCells(p.x, p.y, 4, [
         'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
         'b................................................b',
         'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
@@ -1044,14 +1057,23 @@ function draw() {
   drawDitherOverlay(0.12);
 
   drawSceneTitle(sc);
+  drawIsoBackWalls(sc);
+  drawIsoFloor();
   drawShopFront(sc);
-  sc.platforms.forEach(drawPlatform);
   sc.escalators.forEach(drawEscalator);
+  sc.platforms.forEach(drawPlatform);
   sc.trees.forEach(drawTree);
   drawDecor(sc);
-  for (const item of sc.items) if (!item.taken) drawItem(item);
-  sc.npcs.forEach(drawNpc);
-  drawPlayer();
+  const actors = [];
+  for (const item of sc.items) if (!item.taken) actors.push({ kind: 'item', y: item.y, ref: item });
+  sc.npcs.forEach(npc => actors.push({ kind: 'npc', y: npc.platformY, ref: npc }));
+  actors.push({ kind: 'player', y: state.player.y, ref: state.player });
+  actors.sort((a, b) => a.y - b.y);
+  for (const actor of actors) {
+    if (actor.kind === 'item') drawItem(actor.ref);
+    else if (actor.kind === 'npc') drawNpc(actor.ref);
+    else drawPlayer();
+  }
   drawHints();
   drawDialogueBox();
 }
